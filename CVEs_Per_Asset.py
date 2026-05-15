@@ -100,8 +100,8 @@ while True:
         break
 
 #write to CSVs
-#"list_assets_cves_{time}.csv" stores asset_id and count of confirmed cves per asset
-csv1_filename = f"list_assets_cves_{timestamp}.csv"
+#"assets_cve_counts_list{time}.csv" stores asset_id and count of confirmed cves per asset
+csv1_filename = f"assets_cve_counts_list_{timestamp}.csv"
 csv1_fields = ['asset_id', 'cve_count']
 
 with open(csv1_filename, mode='w', newline='', encoding='utf-8') as f1:
@@ -115,8 +115,8 @@ with open(csv1_filename, mode='w', newline='', encoding='utf-8') as f1:
         })
 print(f"Asset IDs and CVE counts saved to: {csv1_filename}")
 
-#"list_cves_per_assets_{time}.csv" stores all cves per asset (only writes assets WITH confirmed cves)
-csv2_filename = f"list_cves_per_assets_{timestamp}.csv"
+#"cves_per_assets_list{time}.csv" stores all cves per asset (only writes assets WITH confirmed cves)
+csv2_filename = f"cves_per_asset_list_{timestamp}.csv"
 csv2_fields = ['asset_id', 'asset_name', 'asset_ip', 'cve_id']
 
 with open(csv2_filename, mode='w', newline='', encoding='utf-8') as f2:

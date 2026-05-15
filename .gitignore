@@ -1,0 +1,4 @@
+# Ignore generated CSV output files
+*.csv
+
+.venv/
