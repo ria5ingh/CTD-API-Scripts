@@ -107,7 +107,7 @@ print(f"🚫 Potential CVEs (skipped): {skipped_count:,}")
 print(f"📊 Total CVEs processed: {valid_count + skipped_count:,}\n")
 
 # 📁 Combined output CSV for all assets
-asset_filename = f"assets_with_confirmed_cve_{timestamp}.csv"
+asset_filename = f"assets_per_cve_list{timestamp}.csv"
 asset_fieldnames = ['source_cve_id','Item','id','class_type','name', 'ipv4', 'ipv6','mac','vendor','os','model',
                     'firmware','serial_number','num_alerts','insight_names']
 
