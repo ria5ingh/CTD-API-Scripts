@@ -33,7 +33,6 @@ SLEEP_DELAY = 0.6
 
 # --- SUBSTRING OVERRIDES (The Fast Lane) ---
 # If the cleaned program name CONTAINS these keys, it assigns the CPE without an API call.
-# WARNING: Order matters! Always put the most specific names (like '365 apps') above broader names.
 SUBSTRING_OVERRIDES = {
     # Microsoft Suite
     "microsoft 365 apps": "cpe:2.3:a:microsoft:365_apps:*:*:*:*:*:*:*:*",
@@ -176,7 +175,7 @@ def query_nvd_for_cpe(keyword):
         if data.get('totalResults', 0) > 0 and 'products' in data:
             products = data['products']
             
-            # Hunt for a valid title match
+            # find a valid title match
             for product in products:
                 cpe_data = product['cpe']
                 for title_info in cpe_data.get('titles', []):
@@ -201,7 +200,7 @@ def main():
     # 1. Initialize the output file with the 5-column headers
     with open(OUTPUT_CSV, mode='w', newline='', encoding='utf-8') as out_file:
         writer = csv.writer(out_file)
-        writer.writerow(['original program name', 'vendor', 'version', 'cleaned name', 'cpe_name'])
+        writer.writerow(['program', 'vendor', 'version', 'cleaned name', 'cpe_name'])
 
     print("Starting NVD CPE enumeration...")
     

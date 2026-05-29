@@ -1,3 +1,4 @@
+import json
 import requests
 import datetime
 import sys
@@ -147,6 +148,7 @@ def main():
                 version = obj.get(';$version', obj.get('version', ''))
                 
                 writer.writerow([program, vendor, version])
+                print(f"{program}, {vendor}, {version}")
                 
     except Exception as e:
         print(f"Failed to write to CSV: {e}")
