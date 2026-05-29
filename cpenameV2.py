@@ -10,8 +10,8 @@ from urllib.parse import quote
 # ==========================================
 # CONFIGURATION
 # ==========================================
-INPUT_CSV = 'winprogtest.csv'      
-OUTPUT_CSV = 'full_cpe_list5.csv'    
+INPUT_CSV = input("Enter input CSV file name (format should be [program, vendor, version]): ").strip() #eg, full_cpe_list.csv
+OUTPUT_CSV = input("Enter CSV file name you want to save output to: ").strip() #eg, winprogtest.csv
 NVD_API_URL = 'https://services.nvd.nist.gov/rest/json/cpes/2.0'
 
 # Add your NVD API key here
@@ -22,7 +22,7 @@ HEADERS = {
 }
 
 # --- Row Limit ---
-MAX_ROWS = int(input("Enter num of rows to process: ").strip())
+MAX_ROWS = int(input("Enter num of rows to process: ").strip()) #eg, 100
 
 # --- Mandatory Rate Limit Delay ---
 SLEEP_DELAY = 0.6 
