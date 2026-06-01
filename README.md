@@ -5,7 +5,8 @@ This is a collection of Python scripts to automate commonly requested or custom 
 ### Prerequisites
 
 - **python 3.14.5 or later**
-- install requirements.txt 
+- pip install -r requirements.txt
+- request API key for NVD, create a .env file and enter the key as NVD_KEY = "your key"
 
 ### Current Scripts
 1. **`Assets_Per_CVE.py`**: generates two CSV files:

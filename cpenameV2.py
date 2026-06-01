@@ -55,7 +55,10 @@ SUBSTRING_OVERRIDES = {
     "webex meetings server": "cpe:2.3:a:cisco:webex_meetings_server:*:*:*:*:*:*:*:*",
     "webex meetings": "cpe:2.3:a:cisco:webex_meetings:*:*:*:*:*:*:*:*",
     "webex": "cpe:2.3:a:cisco:webex:*:*:*:*:*:*:*:*",
-    "packet tracer": "cpe:2.3:a:cisco:packet_tracer:*:*:*:*:*:*:*:*"
+    "packet tracer": "cpe:2.3:a:cisco:packet_tracer:*:*:*:*:*:*:*:*",
+
+    #misc
+    "crowdstrike": "cpe:2.3:a:crowdstrike:falcon:*:*:*:*:*:*:*:*"
 }
 
 # --- VENDOR BLOCKLIST ---
