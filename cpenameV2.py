@@ -1,4 +1,5 @@
 import csv
+from itertools import count
 from unicodedata import name
 import requests
 import re
@@ -10,7 +11,7 @@ from urllib.parse import quote
 # ==========================================
 # CONFIGURATION
 # ==========================================
-INPUT_CSV = input("Enter input CSV file name (format should be [program, vendor, version]): ").strip() #eg, full_cpe_list.csv
+INPUT_CSV = input("Enter input CSV file name (format should be [program, vendor, version, in_ctd]): ").strip() #eg, full_cpe_list.csv
 OUTPUT_CSV = input("Enter CSV file name you want to save output to: ").strip() #eg, winprogtest.csv
 NVD_API_URL = 'https://services.nvd.nist.gov/rest/json/cpes/2.0'
 
@@ -21,8 +22,6 @@ HEADERS = {
     'apiKey': API_KEY
 }
 
-# --- Row Limit ---
-MAX_ROWS = int(input("Enter num of rows to process: ").strip()) #eg, 100
 
 # --- Mandatory Rate Limit Delay ---
 SLEEP_DELAY = 0.6 
@@ -203,7 +202,7 @@ def main():
     # 1. Initialize the output file with the 5-column headers
     with open(OUTPUT_CSV, mode='w', newline='', encoding='utf-8') as out_file:
         writer = csv.writer(out_file)
-        writer.writerow(['program', 'vendor', 'version', 'cleaned name', 'cpe_name'])
+        writer.writerow(['program', 'vendor', 'version', 'in_ctd', 'cleaned_name', 'cpe_name'])
 
     print("Starting NVD CPE enumeration...")
     
@@ -211,18 +210,19 @@ def main():
         reader = csv.DictReader(in_file)
         
         if not reader.fieldnames or 'program' not in [h.strip().lower() for h in reader.fieldnames if h]:
-            print("\n[CRITICAL ERROR] Could not find a column named 'program' in your CSV!")
+            print("\n[ERROR] Could not find a column named 'program' in your CSV.")
             return
 
-        for count, row in enumerate(reader):
-            
-            if MAX_ROWS is not None and count >= MAX_ROWS:
-                print(f"\n[INFO] Reached the specified limit of {MAX_ROWS} rows. Stopping.")
-                break
+        rows = list(reader)
+        max_rows = len(rows)
+        print(f"Found {max_rows} rows in {INPUT_CSV}.\n")
+    
+        for count, row in enumerate(rows, start=1):
                 
             raw_program = ""
             raw_vendor = ""
             raw_version = ""
+            raw_in_ctd = ""
             
             # 2. Extract program, vendor, AND version from the raw CSV
             for key in row.keys():
@@ -233,6 +233,8 @@ def main():
                     raw_vendor = row[key]
                 elif clean_key == 'version':
                     raw_version = row[key]
+                elif clean_key == 'in_ctd':
+                    raw_in_ctd = row[key]
             
             if not raw_program:
                 continue
@@ -244,21 +246,21 @@ def main():
                 print(f"Skipping: {cleaned_name} (Blocked Vendor: {raw_vendor})")
                 with open(OUTPUT_CSV, mode='a', newline='', encoding='utf-8') as out_file:
                     writer = csv.writer(out_file)
-                    writer.writerow([raw_program, raw_vendor, raw_version, cleaned_name, 'NOT_FOUND (Skipped)'])
+                    writer.writerow([raw_program, raw_vendor, raw_version, raw_in_ctd,cleaned_name, 'NOT_FOUND (Skipped)'])
                 continue
             
-            print(f"Searching: {cleaned_name} ...", end=" ")
-            
+            print(f"[{count}/{max_rows}] Searching: {cleaned_name} ...", end=" ")            
+
             cpe_name = query_nvd_for_cpe(cleaned_name)
             
             # --- Write API results to the CSV with all 5 fields ---
             with open(OUTPUT_CSV, mode='a', newline='', encoding='utf-8') as out_file:
                 writer = csv.writer(out_file)
                 if cpe_name:
-                    writer.writerow([raw_program, raw_vendor, raw_version, cleaned_name, cpe_name])
+                    writer.writerow([raw_program, raw_vendor, raw_version, raw_in_ctd, cleaned_name, cpe_name])
                     print(f"Found Base: {cpe_name}")
                 else:
-                    writer.writerow([raw_program, raw_vendor, raw_version, cleaned_name, 'NOT_FOUND'])
+                    writer.writerow([raw_program, raw_vendor, raw_version, raw_in_ctd, cleaned_name, 'NOT_FOUND'])
                     print("NOT FOUND")
             
             # MANDATORY DELAY
