@@ -144,7 +144,7 @@ def query_nvd_for_cpe(keyword, is_retry=False):
     Returns: (cpe_string, match_confidence)
     """
     if not keyword:
-        return None, "n/a"
+            return None, "N" 
         
     keyword_lower = keyword.lower()
 
@@ -153,7 +153,7 @@ def query_nvd_for_cpe(keyword, is_retry=False):
         if re.search(pattern, keyword_lower):
             if cpe == "NOT_FOUND":
                 if not is_retry: print("[Override Applied: NOT_FOUND]", end=" ")
-                return None, "n/a"
+                return None, "N"
             if not is_retry: print("[Override Applied]", end=" ")
             return cpe, "O"
 
@@ -217,7 +217,7 @@ def query_nvd_for_cpe(keyword, is_retry=False):
                 
                 # Tier 1: Check for Strict Match
                 if is_valid_title_match(keyword, title):
-                    return cpe_string, "L"
+                    return cpe_string, "F"
                 
                 # Tier 2: Check for Potential Match
                 if not potential_match:

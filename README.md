@@ -26,21 +26,20 @@ This is a collection of Python scripts to automate commonly requested or custom 
     * `in_ctd`: "**yes**" if the program's KEVs are already tracked by CTD, (the last of tracked vendor and programs are in `cve_program_matcher_cut.csv`). "**no**" if the program is *not* natively tracked by CTD. 
 
 5. **`cpenameV5.py`**: generates a CSV file that lists all programs AND each program's "cpeName" (if it exists).
-    - the "**cpeName**" is similar to a unique identifier given to programs in the NVD database, typically in the format `cpe:2.3:a:{vendor}:{program}:{version}:*:*:*:*:*:*:*`, where each `*` is a field corresponding to edition, target software/hardware, etc.
-    - given an input csv file with a list of programs in the format `[program, vendor, version, in_ctd]`, this script standardizes all program names and uses the "cleaned" program name to query the NVD database for the matching cpeName string.
-    
-    - outputs a csv file with columns: `[program, vendor, version, in_ctd, cleaned_name, cpe_name, confirmed]`
+    - The "**cpeName**" is a unique identifier given to programs in the NVD database, typically formatted as `cpe:2.3:a:{vendor}:{program}:{version}:*:*:*:*:*:*:*`, where each `*` represents fields like edition, target software/hardware, etc.
+    - Given an input csv file with a list of programs in the format `[program, vendor, version, in_ctd]`, this script standardizes all program names, using "cleaned" program name to query the NVD database for the matching cpeName string. It matches results with strict substring matching first, and token-based matching as a fallback. 
+    - Outputs a csv file with columns: `[program, vendor, version, in_ctd, cleaned_name, cpe_name, confirmed]`
 
     How to read output:
 
     * `program, vendor, version, in_ctd`: these columns are the same as the input csv
     * `cleaned_name`: the standardized program name used to query the NVD CPE database
-    * `cpe_name`: the cpeName base string of the program, or `NOT_FOUND` if the program was not found in the NVD CPE database.
-    * `confirmed`: describes the certainty of a cpeName match for a program.
-        * "**O**": the program search was overridden by a prematched cpeName string (used for common programs to reduce API calls. ie, Microsoft Office programs, common browsers like Chrome, etc). 
-        * "**L**": A *likely* cpeName match was found (think of this as 99% certainty).
-        * "**P**": A *potential* cpeName match was found 
-        * "**N**": no cpeName matches were found
+    * `cpe_name`: the generalized base cpeName of the program, or `NOT_FOUND` if the program was not in the NVD CPE database.
+    * `confirmed`: describes the certainty of a cpeName match.
+        * "**O**" (Override): The program search was overridden by a pre-mapped CPE string. (Used for common programs to reduce API calls. ie, Microsoft Office programs, common browsers like Chrome, etc). 
+        * "**F**" (Full): A strict title match was found and vetted. Think of this as a highly confident match.
+        * "**P**" (Potential): A token-based match was found (all tokens appear, but not in a continuous string). This is not a confirmed full match. 
+        * "**N**" (N/A): no valid cpeName matches were found.
 
 
     
