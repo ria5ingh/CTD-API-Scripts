@@ -36,9 +36,9 @@ This is a collection of Python scripts to automate commonly requested or custom 
     * `cleaned_name`: the standardized program name used to query the NVD CPE database
     * `cpe_name`: the generalized base cpeName of the program, or `NOT_FOUND` if the program was not in the NVD CPE database.
     * `confirmed`: describes the certainty of a cpeName match.
-        * "**O**" (Override): The program search was overridden by a pre-mapped CPE string. (Used for common programs to reduce API calls. ie, Microsoft Office programs, common browsers like Chrome, etc). 
         * "**F**" (Full): A strict title match was found and vetted. Think of this as a highly confident match.
         * "**P**" (Potential): A token-based match was found (all tokens appear, but not in a continuous string). This is not a confirmed full match. 
+        * "**O**" (Override): The program search was overridden by a pre-mapped CPE string. (Used for common programs to reduce API calls. ie, Microsoft Office programs, common browsers like Chrome, etc). If a program title *contains* a string that is pre-mapped, it will automatically be overridden, hence, the match may not be 100% guaranteed.
         * "**N**" (N/A): no valid cpeName matches were found.
 
 
