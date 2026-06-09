@@ -28,39 +28,54 @@ SLEEP_DELAY = 0.6
 # ==========================================
 
 # --- SUBSTRING OVERRIDES (The Fast Lane) ---
+# Note: Since this uses re.search(), order matters. Put more specific names (like 'edge webview2') BEFORE general names (like 'edge') so the specific one gets matched first.
 SUBSTRING_OVERRIDES = {
-    # Microsoft Suite
-    "microsoft 365 apps": "cpe:2.3:a:microsoft:365_apps:*:*:*:*:*:*:*:*",
-    "microsoft 365": "cpe:2.3:a:microsoft:365:*:*:*:*:*:*:*:*",
-    "microsoft edge webview": "cpe:2.3:a:microsoft:edge_chromium:*:*:*:*:*:*:*:*",
-    "microsoft edge": "cpe:2.3:a:microsoft:edge:*:*:*:*:*:*:*:*",
-    "microsoft teams": "cpe:2.3:a:microsoft:teams:*:*:*:*:*:*:*:*",
-    
-    # Windows SDKs/MS services
-    "windows software development kit": "cpe:2.3:a:microsoft:windows_software_development_kit:*:*:*:*:*:*:*:*",
-    "windows sdk": "cpe:2.3:a:microsoft:windows_software_development_kit:*:*:*:*:*:*:*:*",
-    "universal crt": "NOT_FOUND",
-    "winrt": "NOT_FOUND",
-    
-    # Browsers
-    "google chrome": "cpe:2.3:a:google:chrome:*:*:*:*:*:*:*:*",
-    "mozilla firefox": "cpe:2.3:a:mozilla:firefox:*:*:*:*:*:*:*:*",
-    "brave": "cpe:2.3:a:brave:brave:*:*:*:*:*:*:*:*",
-    
-    # Cisco
-    "webex meetings server": "cpe:2.3:a:cisco:webex_meetings_server:*:*:*:*:*:*:*:*",
-    "webex meetings": "cpe:2.3:a:cisco:webex_meetings:*:*:*:*:*:*:*:*",
-    "webex": "cpe:2.3:a:cisco:webex:*:*:*:*:*:*:*:*",
-    "packet tracer": "cpe:2.3:a:cisco:packet_tracer:*:*:*:*:*:*:*:*",
-
-    # Misc
-    "amd software": "cpe:2.3:a:amd:radeon_software:*:*:*:*:*:*:*:*",
-    "crowdstrike": "cpe:2.3:a:crowdstrike:falcon:*:*:*:*:*:*:*:*",
-
-    #hp
+    # ------------------------------------------
+    # Blocked Vendors/Keywords (Returns "NOT_FOUND")
+    # ------------------------------------------
     r"\bhp\b": "NOT_FOUND",
     r"\bhewlett packard\b": "NOT_FOUND",
     r"\bhewlett-packard\b": "NOT_FOUND",
+    r"\buniversal crt\b": "NOT_FOUND",
+    r"\bwinrt\b": "NOT_FOUND",
+
+    # ------------------------------------------
+    # MS Suite, Dev Tools, SDKs. Wom 
+    # ------------------------------------------
+    r"\bmicrosoft 365 apps\b": "cpe:2.3:a:microsoft:365_apps:*:*:*:*:*:*:*:*",
+    r"\bmicrosoft 365\b": "cpe:2.3:a:microsoft:365:*:*:*:*:*:*:*:*",
+    r"\bmicrosoft edge webview\b": "cpe:2.3:a:microsoft:edge_chromium:*:*:*:*:*:*:*:*",
+    r"\bmicrosoft edge\b": "cpe:2.3:a:microsoft:edge:*:*:*:*:*:*:*:*",
+    r"\bmicrosoft teams\b": "cpe:2.3:a:microsoft:teams:*:*:*:*:*:*:*:*",
+    r"\bwindows software development kit\b": "cpe:2.3:a:microsoft:windows_software_development_kit:*:*:*:*:*:*:*:*",
+    r"\bwindows sdk\b": "cpe:2.3:a:microsoft:windows_software_development_kit:*:*:*:*:*:*:*:*",
+
+    # ------------------------------------------
+    # Browsers, Communications & Security
+    # ------------------------------------------
+    r"\bgoogle chrome\b": "cpe:2.3:a:google:chrome:*:*:*:*:*:*:*:*",
+    r"\bmozilla firefox\b": "cpe:2.3:a:mozilla:firefox:*:*:*:*:*:*:*:*",
+    r"\bbrave\b": "cpe:2.3:a:brave:brave:*:*:*:*:*:*:*:*",
+    r"\bwebex meetings server\b": "cpe:2.3:a:cisco:webex_meetings_server:*:*:*:*:*:*:*:*",
+    r"\bwebex meetings\b": "cpe:2.3:a:cisco:webex_meetings:*:*:*:*:*:*:*:*",
+    r"\bwebex\b": "cpe:2.3:a:cisco:webex:*:*:*:*:*:*:*:*",
+    r"\bcrowdstrike\b": "cpe:2.3:a:crowdstrike:falcon:*:*:*:*:*:*:*:*",
+    #r"\bdell supportassist\b": "cpe:2.3:a:dell:supportassist:*:*:*:*:*:*:*:*",
+    #r"\blenovo vantage\b": "cpe:2.3:a:lenovo:vantage:*:*:*:*:*:*:*:*",
+    #r"\bhp support assistant\b": "cpe:2.3:a:hp:support_assistant:*:*:*:*:*:*:*:*"
+
+    # ------------------------------------------
+    # OEM & Hardware Utilities
+    # ------------------------------------------
+ 
+    r"\bnvidia geforce experience\b": "cpe:2.3:a:nvidia:geforce_experience:*:*:*:*:*:*:*:*",
+    r"\bnvidia control panel\b": "cpe:2.3:a:nvidia:control_panel:*:*:*:*:*:*:*:*",
+    r"\bintel driver (?:&) support assistant\b": "cpe:2.3:a:intel:driver_\\&_support_assistant:*:*:*:*:*:*:*:*",
+    r"\bintel proset.*?wireless\b": "cpe:2.3:a:intel:proset\\/wireless_wifi:*:*:*:*:*:*:*:*",
+    r"\brealtek.*?audio\b": "cpe:2.3:a:realtek:high_definition_audio_driver:*:*:*:*:*:*:*:*",
+    r"\bcorsair icue\b": "cpe:2.3:a:corsair:icue:*:*:*:*:*:*:*:*",
+    r"\bamd software\b": "cpe:2.3:a:amd:radeon_software:*:*:*:*:*:*:*:*",
+
 }
 
 
