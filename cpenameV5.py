@@ -155,7 +155,7 @@ def query_nvd_for_cpe(keyword, is_retry=False):
                 if not is_retry: print("[Override Applied: NOT_FOUND]", end=" ")
                 return None, "n/a"
             if not is_retry: print("[Override Applied]", end=" ")
-            return cpe, "yes"
+            return cpe, "O"
 
     # --- STANDARD PATH: Query the API ---
     encoded_keyword = quote(keyword)
@@ -200,7 +200,7 @@ def query_nvd_for_cpe(keyword, is_retry=False):
                     time.sleep(SLEEP_DELAY) # Respect the rate limit before hitting the API again
                     return query_nvd_for_cpe(retry_keyword, is_retry=True)
             
-            return None, "n/a"
+            return None, "N"
             
         # ==========================================
         # HUNT PHASE: Combined Strict & Token Fallback
@@ -217,7 +217,7 @@ def query_nvd_for_cpe(keyword, is_retry=False):
                 
                 # Tier 1: Check for Strict Match
                 if is_valid_title_match(keyword, title):
-                    return cpe_string, "yes"
+                    return cpe_string, "L"
                 
                 # Tier 2: Check for Potential Match
                 if not potential_match:
@@ -229,16 +229,16 @@ def query_nvd_for_cpe(keyword, is_retry=False):
 
         if potential_match:
             print("[Token Fallback Match]", end=" ")
-            return potential_match, "potential"
+            return potential_match, "P"
 
-        return None, "n/a"
+        return None, "N"
             
     except requests.exceptions.HTTPError as e:
         print(f" [!] Blocked by NVD: {e.response.status_code}")
     except requests.exceptions.RequestException as e:
         print(f" [!] Network Error: {e}")
 
-    return None, "n/a"
+    return None, "N"
 
 def main():
     start_time = time.time()
@@ -297,7 +297,7 @@ def main():
                     writer.writerow([raw_program, raw_vendor, raw_version, raw_in_ctd, cleaned_name, cpe_name, confirmed_flag])
                     print(f"Found Base: {cpe_name} (Confirmed: {confirmed_flag})")
                 else:
-                    writer.writerow([raw_program, raw_vendor, raw_version, raw_in_ctd, cleaned_name, 'NOT_FOUND', 'n/a'])
+                    writer.writerow([raw_program, raw_vendor, raw_version, raw_in_ctd, cleaned_name, 'NOT_FOUND', 'N'])
                     print("NOT FOUND")
             
             # MANDATORY DELAY
