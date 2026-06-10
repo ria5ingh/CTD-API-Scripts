@@ -7,9 +7,7 @@ import os
 from dotenv import load_dotenv
 from urllib.parse import quote
 
-# ==========================================
-# CONFIGURATION
-# ==========================================
+#CONFIGURATION
 INPUT_CSV = input("Enter input CSV file name (format should be [program, vendor, version, in_ctd]): ").strip() 
 OUTPUT_CSV = input("Enter CSV file name you want to save output to: ").strip() 
 NVD_API_URL = 'https://services.nvd.nist.gov/rest/json/cpes/2.0'
@@ -20,28 +18,20 @@ HEADERS = {
     'apiKey': API_KEY
 }
 
-# --- Mandatory Rate Limit Delay ---
+#RATE LIMITING (NVD api bottle neck, only 50 requests per 30 s)
 SLEEP_DELAY = 0.6 
 
-# ==========================================
-# RULES & OVERRIDES
-# ==========================================
-
-# --- SUBSTRING OVERRIDES (The Fast Lane) ---
-# Note: Since this uses re.search(), order matters. Put more specific names (like 'edge webview2') BEFORE general names (like 'edge') so the specific one gets matched first.
+#RULES & OVERRIDES
+#ordering matters, using re.search()
 SUBSTRING_OVERRIDES = {
-    # ------------------------------------------
-    # Blocked Vendors/Keywords (Returns "NOT_FOUND")
-    # ------------------------------------------
+    # Blocked Vendors/Program names
     r"\bhp\b": "NOT_FOUND",
     r"\bhewlett packard\b": "NOT_FOUND",
     r"\bhewlett-packard\b": "NOT_FOUND",
     r"\buniversal crt\b": "NOT_FOUND",
     r"\bwinrt\b": "NOT_FOUND",
 
-    # ------------------------------------------
-    # MS Suite, Dev Tools, SDKs. Wom 
-    # ------------------------------------------
+    # MS Suite, Dev Tools, SDKs
     r"\bmicrosoft 365 apps\b": "cpe:2.3:a:microsoft:365_apps:*:*:*:*:*:*:*:*",
     r"\bmicrosoft 365\b": "cpe:2.3:a:microsoft:365:*:*:*:*:*:*:*:*",
     r"\bmicrosoft edge webview\b": "cpe:2.3:a:microsoft:edge_chromium:*:*:*:*:*:*:*:*",
@@ -50,9 +40,7 @@ SUBSTRING_OVERRIDES = {
     r"\bwindows software development kit\b": "cpe:2.3:a:microsoft:windows_software_development_kit:*:*:*:*:*:*:*:*",
     r"\bwindows sdk\b": "cpe:2.3:a:microsoft:windows_software_development_kit:*:*:*:*:*:*:*:*",
 
-    # ------------------------------------------
-    # Browsers, Communications & Security
-    # ------------------------------------------
+    # Browsers, Comms, Security
     r"\bgoogle chrome\b": "cpe:2.3:a:google:chrome:*:*:*:*:*:*:*:*",
     r"\bmozilla firefox\b": "cpe:2.3:a:mozilla:firefox:*:*:*:*:*:*:*:*",
     r"\bbrave\b": "cpe:2.3:a:brave:brave:*:*:*:*:*:*:*:*",
@@ -64,10 +52,7 @@ SUBSTRING_OVERRIDES = {
     #r"\blenovo vantage\b": "cpe:2.3:a:lenovo:vantage:*:*:*:*:*:*:*:*",
     #r"\bhp support assistant\b": "cpe:2.3:a:hp:support_assistant:*:*:*:*:*:*:*:*"
 
-    # ------------------------------------------
-    # OEM & Hardware Utilities
-    # ------------------------------------------
- 
+    # OEM, Hardware Util
     r"\bnvidia geforce experience\b": "cpe:2.3:a:nvidia:geforce_experience:*:*:*:*:*:*:*:*",
     r"\bnvidia control panel\b": "cpe:2.3:a:nvidia:control_panel:*:*:*:*:*:*:*:*",
     r"\bintel driver (?:&) support assistant\b": "cpe:2.3:a:intel:driver_\\&_support_assistant:*:*:*:*:*:*:*:*",
@@ -79,7 +64,7 @@ SUBSTRING_OVERRIDES = {
 }
 
 
-# PRE-COMPILED REGEX FOR MAXIMUM SPEED
+#PRE-COMPILED REGEX
 ALLOWED_JUNK_PATTERN = re.compile(
     r'\b\d+(?:\.\d+)+\b|'                
     r'\b\d+\b|'                          
@@ -89,15 +74,9 @@ ALLOWED_JUNK_PATTERN = re.compile(
     re.IGNORECASE
 )
 
-# ==========================================
-# FUNCTIONS
-# ==========================================
-
+#FUNCTIONS
 def clean_program_name(name):
-    """
-    Cleans messy naming conventions by truncating at common delimiters, 
-    then stripping locales, architectures, and appended build strings.
-    """
+
     name = name.split(' - ')[0]    
     name = re.sub(r'(?i)\b[a-z]{2}-[a-z]{2}\b', '', name) 
 
@@ -114,33 +93,20 @@ def clean_program_name(name):
     return cleaned_name
 
 def is_valid_title_match(keyword, nvd_title):
-    """
-    Tier 1: Highly optimized BIDIRECTIONAL title evaluation. 
-    Checks if the keyword is inside the title OR if the title is inside the keyword,
-    and ensures any leftover words are just valid trailing junk.
-    """
     nvd_title = re.split(r'\s+[-–—]\s+', nvd_title, maxsplit=1)[0].strip()
-
     keyword_lower = keyword.lower()
     title_lower = nvd_title.lower()
     remainder = ""
-    
-    # Direction 1: Is our keyword inside the NVD title?
-    if keyword_lower in title_lower:
-        parts = title_lower.split(keyword_lower, 1)
-        # Glue the prefix [0] and suffix [1] together
-        remainder = parts[0] + " " + parts[1]
-        
-    # Direction 2: Is the NVD title inside our keyword?
-    elif title_lower in keyword_lower:
-        parts = keyword_lower.split(title_lower, 1)
-        # Glue the prefix [0] and suffix [1] together
-        remainder = parts[0] + " " + parts[1]
 
+    if keyword_lower in title_lower: #direction 1: keyword in title
+        parts = title_lower.split(keyword_lower, 1)
+        remainder = parts[0] + " " + parts[1]
+    elif title_lower in keyword_lower: #direction 2: title in keyword
+        parts = keyword_lower.split(title_lower, 1)
+        remainder = parts[0] + " " + parts[1]
     else:
         return False
         
-
     remainder = ALLOWED_JUNK_PATTERN.sub('', remainder)
     return len(remainder) == 0
 
@@ -163,7 +129,7 @@ def query_nvd_for_cpe(keyword, is_retry=False):
         
     keyword_lower = keyword.lower()
 
-    # --- FAST-PATH: Substring Overrides ---
+    #check overrides
     for pattern, cpe in SUBSTRING_OVERRIDES.items():
         if re.search(pattern, keyword_lower):
             if cpe == "NOT_FOUND":
@@ -172,7 +138,7 @@ def query_nvd_for_cpe(keyword, is_retry=False):
             if not is_retry: print("[Override Applied]", end=" ")
             return cpe, "O"
 
-    # --- STANDARD PATH: Query the API ---
+    #api query
     encoded_keyword = quote(keyword)
     url = f"{NVD_API_URL}?keywordSearch={encoded_keyword}"
     
@@ -185,7 +151,7 @@ def query_nvd_for_cpe(keyword, is_retry=False):
         if data.get('totalResults', 0) > 0 and 'products' in data:
             raw_products = data['products']
             
-            # 1. Pre-filter for Applications ('a') and Windows compatibility
+            #pre-filter for ('a') in cpe part and ('windows') in target_sw
             for product in raw_products:
                 cpe_string = product.get('cpe', {}).get('cpeName', '')
                 parts = cpe_string.split(':')
@@ -200,26 +166,20 @@ def query_nvd_for_cpe(keyword, is_retry=False):
                 else:
                     valid_windows_products.append(product)
             
-        # ==========================================
-        # RETRY FALLBACK: Strip Trailing Filler Words
-        # ==========================================
-        # If the API gave us nothing (or no valid Windows apps), try stripping trailing junk once.
+        #fallback: retry after stripping trailing filler words if no configs returned
         if not valid_windows_products:
             if not is_retry:
-                # Safely strips trailing filler words AND standalone numbers/versions from the end of the string
                 retry_pattern = r'(?i)(?:\s+|-|_)*(?:desktop|client|server|edition|agent|app|windows|mac|linux|v|version|for|software|release|\d+(?:\.\d+)*)+\s*$'
                 retry_keyword = re.sub(retry_pattern, '', keyword).strip()
                 
                 if retry_keyword != keyword:
                     print(f"[0 Results. Retrying as '{retry_keyword}']", end=" ")
-                    time.sleep(SLEEP_DELAY) # Respect the rate limit before hitting the API again
+                    time.sleep(SLEEP_DELAY) 
                     return query_nvd_for_cpe(retry_keyword, is_retry=True)
             
             return None, "N"
             
-        # ==========================================
-        # HUNT PHASE: Combined Strict & Token Fallback
-        # ==========================================
+        #check returned configurations for matches
         kw_tokens = keyword_lower.split()
         potential_match = None
         
@@ -230,11 +190,11 @@ def query_nvd_for_cpe(keyword, is_retry=False):
             for title_info in cpe_data.get('titles', []):
                 title = title_info.get('title', '')
                 
-                # Tier 1: Check for Strict Match
+                #1. strict substring match
                 if is_valid_title_match(keyword, title):
                     return cpe_string, "F"
                 
-                # Tier 2: Check for Potential Match
+                #2. fallback: token match
                 if not potential_match:
                     title_lower = title.lower()
                     title_tokens = title_lower.split()
@@ -258,7 +218,7 @@ def query_nvd_for_cpe(keyword, is_retry=False):
 def main():
     start_time = time.time()
     
-    # 1. Initialize the output file with the 7-column headers
+    #output csv
     with open(OUTPUT_CSV, mode='w', newline='', encoding='utf-8') as out_file:
         writer = csv.writer(out_file)
         writer.writerow(['program', 'vendor', 'version', 'in_ctd', 'cleaned_name', 'cpe_name', 'confirmed'])
@@ -283,7 +243,6 @@ def main():
             raw_version = ""
             raw_in_ctd = ""
             
-            # 2. Extract data from the raw CSV
             for key in row.keys():
                 clean_key = key.strip().lower() if key else ""
                 if clean_key == 'program':
@@ -302,10 +261,9 @@ def main():
             
             print(f"[{count}/{max_rows}] Searching: {cleaned_name} ...", end=" ")            
 
-            # Capture BOTH the CPE and the confidence flag
             cpe_name, confirmed_flag = query_nvd_for_cpe(cleaned_name)
             
-            # --- Write API results to the CSV ---
+            #write API results
             with open(OUTPUT_CSV, mode='a', newline='', encoding='utf-8') as out_file:
                 writer = csv.writer(out_file)
                 if cpe_name:
@@ -315,7 +273,6 @@ def main():
                     writer.writerow([raw_program, raw_vendor, raw_version, raw_in_ctd, cleaned_name, 'NOT_FOUND', 'N'])
                     print("NOT FOUND")
             
-            # MANDATORY DELAY
             time.sleep(SLEEP_DELAY)
 
     #print results   
