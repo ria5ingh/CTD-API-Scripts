@@ -14,9 +14,9 @@ NVD_API_URL = 'https://services.nvd.nist.gov/rest/json/cpes/2.0'
 
 load_dotenv()
 API_KEY = os.getenv('NVD_KEY')
-HEADERS = {
-    'apiKey': API_KEY
-}
+HEADERS = {}
+if API_KEY:
+    HEADERS["apiKey"] = API_KEY
 
 #RATE LIMITING (NVD api bottle neck, only 50 requests per 30 s)
 SLEEP_DELAY = 0.6 
