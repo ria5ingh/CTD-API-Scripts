@@ -41,14 +41,23 @@ This is a collection of Python scripts to automate commonly requested or custom 
         * "**O**" (Override): The program search was overridden by a pre-mapped CPE string. (Used for common programs to reduce API calls. ie, Microsoft Office programs, common browsers like Chrome, etc). If a program title *contains* a string that is pre-mapped, it will automatically be overridden, hence, the match may not be 100% guaranteed.
         * "**N**" (N/A): no valid cpeName matches were found.
 
+6. **`cve_matchv4.py`**: Given an input CSV file containing valid CPE names and versions (the output from `cpenameV5.py`), this script queries the NVD API to find CVEs that match the CPE's version and software (Windows OS), generating a csv file with all the CVEs found. NOTE: this script finds CVEs for applications only applicable to Windows environments. It does not return CVEs for programs that also require other specific hardware configurations. 
+    - User is prompted for the input/output filenames, an optional limit on how many CVEs to fetch per program, and whether to strictly filter for only Known Exploited Vulnerabilities (KEVs).
+    - Outputs a csv file with columns: `[Program, Version, Queried_CPE, Confidence, CVE, CVSS_Version, Base_Score, Base_Severity, CISA_KEV]`
+
+    How to read output:
+
+    * `Program, Version, Queried_CPE, Confidence`: These columns are carried over directly from the input CSV to maintain tracking.
+    * `CVE`: The unique identifier for the specific vulnerability (e.g., CVE-2024-12345).
+    * `CVSS_Version`: The version of the Common Vulnerability Scoring System used for the primary metric. The script prioritizes the newest available scoring system (e.g., 4.0, 3.1, 3.0, 2.0).
+    * `Base_Score`: The numerical CVSS severity score of the vulnerability, ranging from 0.0 to 10.0.
+    * `Base_Severity`: The qualitative severity rating (e.g., LOW, MEDIUM, HIGH, CRITICAL).
+    * `CISA_KEV`: The official CISA vulnerability name if the CVE is currently listed on the CISA Known Exploited Vulnerabilities catalog. If it is not on the catalog, this will read "N/A".
 
     
-    
-
-
 ### Instructions
 Running the scripts will prompt for your hostname or IP, username, and password for your CTD instance. Once inputed, the scripts will query the API and create the corresponding CSVs in your local directory. 
 
 ### Future Development
-- CVEs for 3rd-party Windows Programs script (integrate with NVD)
+- ~~CVEs for 3rd-party Windows Programs script (integrate with NVD)~~
 - CVEs for Linux OS script
