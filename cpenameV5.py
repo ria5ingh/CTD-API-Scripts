@@ -221,7 +221,7 @@ def main():
     #output csv
     with open(OUTPUT_CSV, mode='w', newline='', encoding='utf-8') as out_file:
         writer = csv.writer(out_file)
-        writer.writerow(['program', 'vendor', 'version', 'in_ctd', 'cleaned_name', 'cpe_name', 'confirmed'])
+        writer.writerow(['program', 'vendor', 'version', 'in_ctd', 'cleaned_name', 'cpe_name', 'confidence'])
 
     print("Starting NVD CPE enumeration...")
     
@@ -261,14 +261,14 @@ def main():
             
             print(f"[{count}/{max_rows}] Searching: {cleaned_name} ...", end=" ")            
 
-            cpe_name, confirmed_flag = query_nvd_for_cpe(cleaned_name)
+            cpe_name, confidence_flag = query_nvd_for_cpe(cleaned_name)
             
             #write API results
             with open(OUTPUT_CSV, mode='a', newline='', encoding='utf-8') as out_file:
                 writer = csv.writer(out_file)
                 if cpe_name:
-                    writer.writerow([raw_program, raw_vendor, raw_version, raw_in_ctd, cleaned_name, cpe_name, confirmed_flag])
-                    print(f"Found Base: {cpe_name} (Confirmed: {confirmed_flag})")
+                    writer.writerow([raw_program, raw_vendor, raw_version, raw_in_ctd, cleaned_name, cpe_name, confidence_flag])
+                    print(f"Found Base: {cpe_name} (Confidence: {confidence_flag})")
                 else:
                     writer.writerow([raw_program, raw_vendor, raw_version, raw_in_ctd, cleaned_name, 'NOT_FOUND', 'N'])
                     print("NOT FOUND")

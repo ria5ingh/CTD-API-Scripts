@@ -28,14 +28,14 @@ This is a collection of Python scripts to automate commonly requested or custom 
 5. **`cpenameV5.py`**: generates a CSV file that lists all programs AND each program's "cpeName" (if it exists).
     - The "**cpeName**" is a unique identifier given to programs in the NVD database, typically formatted as `cpe:2.3:a:{vendor}:{program}:{version}:*:*:*:*:*:*:*`, where each `*` represents fields like edition, target software/hardware, etc.
     - Given an input csv file with a list of programs in the format `[program, vendor, version, in_ctd]`, this script standardizes all program names, using "cleaned" program name to query the NVD database for the matching cpeName string. It matches results with strict substring matching first, and token-based matching as a fallback. 
-    - Outputs a csv file with columns: `[program, vendor, version, in_ctd, cleaned_name, cpe_name, confirmed]`
+    - Outputs a csv file with columns: `[program, vendor, version, in_ctd, cleaned_name, cpe_name, confidence]`
 
     How to read output:
 
     * `program, vendor, version, in_ctd`: these columns are the same as the input csv
     * `cleaned_name`: the standardized program name used to query the NVD CPE database
     * `cpe_name`: the generalized base cpeName of the program, or `NOT_FOUND` if the program was not in the NVD CPE database.
-    * `confirmed`: describes the certainty of a cpeName match.
+    * `confidence`: describes the certainty of a cpeName match.
         * "**F**" (Full): A strict title match was found and vetted. Think of this as a highly confident match.
         * "**P**" (Potential): A token-based match was found (all tokens appear, but not in a continuous string). This is not a confirmed full match. 
         * "**O**" (Override): The program search was overridden by a pre-mapped CPE string. (Used for common programs to reduce API calls. ie, Microsoft Office programs, common browsers like Chrome, etc). If a program title *contains* a string that is pre-mapped, it will automatically be overridden, hence, the match may not be 100% guaranteed.
