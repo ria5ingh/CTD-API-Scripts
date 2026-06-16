@@ -1,1 +1,1 @@
-Additional folder for batch files for Edge
+(custom) batch files for Edge
