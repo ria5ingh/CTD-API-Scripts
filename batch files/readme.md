@@ -1,1 +1,1 @@
-(custom) batch files for Edge
+Custom batch files for running Edge (offline)
