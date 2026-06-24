@@ -76,7 +76,9 @@ with open(cve_filename, mode='w', newline='', encoding='utf-8') as cve_csvfile:
             'page': str(page),
             'per_page': '500',
             'site_id__exact': '1',
-            'ghost__exact': 'false'
+            'ghost__exact': 'false',
+            'valid__exact': 'true',        
+            'special_hint__exact': '0' # 0 = eUnicast
         }
 
         assets_response = requests.get(f"https://{ctd_ip}/ranger/vulnerabilities",

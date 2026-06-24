@@ -38,7 +38,7 @@ asset_fieldnames = ['id', 'name', 'ipv4', 'ipv6', 'vendor', 'model']
 total_assets_processed = 0
 skipped_assets_count = 0
 
-#Fetch All Assets
+#Fetch all Assets
 with open(asset_filename, mode='w', newline='', encoding='utf-8') as csvfile:
     writer = csv.DictWriter(csvfile, fieldnames=asset_fieldnames)
     writer.writeheader()
@@ -47,13 +47,12 @@ with open(asset_filename, mode='w', newline='', encoding='utf-8') as csvfile:
     while True:
         print(f"Fetching Assets: page {page}...")
         
-        # Parameters for fetching assets
         asset_params = {
             'page': str(page),
             'per_page': '500',
             'ghost__exact': 'false',
-            'valid__exact': 'true',         # Filters out deleted/aged-out assets
-            'special_hint__exact': '0'      # 0 = eUnicast (filters out Multicast/Broadcast via API)
+            'valid__exact': 'true',        
+            'special_hint__exact': '0' # 0 = eUnicast
         }
 
         response = requests.get(f"https://{ctd_ip}/ranger/assets",
@@ -63,17 +62,12 @@ with open(asset_filename, mode='w', newline='', encoding='utf-8') as csvfile:
 
         data = response.json()
 
-        # Check if we have objects on the current page
         if 'objects' in data and isinstance(data['objects'], list) and data['objects']:
             asset_list = data['objects']
             
             for asset in asset_list:
                 
                 asset_name = str(asset.get('name', '')).lower()
-                
-                if "(multicast)" in asset_name or "(broadcast)" in asset_name:
-                    skipped_assets_count += 1
-                    continue
 
                 row_data = {}
                 

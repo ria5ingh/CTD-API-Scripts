@@ -45,7 +45,9 @@ while True:
     params = {
         'page': str(page),
         'per_page': '500',
-        'ghost__exact': 'false' #get non-ghost assets
+        'ghost__exact': 'false', #get non-ghost assets
+        'valid__exact': 'true', 
+        'special_hint__exact': '0' # 0 = eUnicast 
     }
     
     response = requests.get(f"https://{ctd_ip}/ranger/assets", verify=False, headers=headers, params=params)
