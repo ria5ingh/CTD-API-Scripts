@@ -1,3 +1,4 @@
+from getpass import getpass
 import json
 import requests
 import datetime
@@ -5,6 +6,7 @@ import sys
 import urllib3
 import csv
 from collections import defaultdict
+import getpass
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -140,7 +142,7 @@ def main():
     #User Inputs
     ctd_ip = input("Enter CTD IP or hostname: ").strip()
     username = input("Enter CTD username: ").strip()
-    password = input("Enter CTD password: ").strip()
+    password = getpass.getpass("Enter CTD password: ").strip()
     
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"windows_programs_list_{timestamp}.csv"

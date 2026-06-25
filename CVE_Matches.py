@@ -24,10 +24,8 @@ if API_KEY:
 MAX_CVES_PER_PROGRAM = int(input("Enter maximum CVEs to list per program: ") or 100)
 SLEEP_DELAY = 0.6
 
-# ==========================================
-# HELPER FUNCTIONS
-# ==========================================
 
+# HELPER FUNCTIONS
 def build_versioned_cpe(cpe_name, version):
     parts = cpe_name.split(":")
 
@@ -39,7 +37,6 @@ def build_versioned_cpe(cpe_name, version):
 
     return ":".join(parts)
 
-
 def get_cisa_kev_name(cve_data):
     """
     Extracts the CISA vulnerability name if the CVE is on the KEV catalog.
@@ -47,13 +44,12 @@ def get_cisa_kev_name(cve_data):
     """
     return cve_data.get("cisaVulnerabilityName", "N/A")
 
-
 def get_cvss_metrics(metrics):
     """
     Extracts CVSS version, base score, and base severity dynamically.
     Prioritizes the first Primary metric of the highest available CVSS version.
     """
-    # Sort keys descending (e.g., V40 > V31 > V30 > V2)
+    #Sort keys descending (V40 > V31 > V30 > V2)
     sorted_metric_keys = sorted(metrics.keys(), reverse=True)
     
     def extract_data(item):
@@ -61,19 +57,18 @@ def get_cvss_metrics(metrics):
         version = cvss_data.get("version", "N/A")
         score = cvss_data.get("baseScore", "N/A")
         
-        # Fallback trick: v3/v4 has baseSeverity inside cvssData, v2 has it outside.
+        # Fallback: v3/v4 has baseSeverity inside cvssData, v2 has it outside.
         severity = cvss_data.get("baseSeverity") or item.get("baseSeverity", "N/A")
         
         return version, score, severity
 
-    # 1. Search for the highest version "Primary" metric
+    # Search for the highest version "Primary" metric
     for key in sorted_metric_keys:
         for metric_item in metrics[key]:
             if metric_item.get("type") == "Primary":
-                # The 'return' immediately exits the function, ignoring lower versions
                 return extract_data(metric_item)
                 
-    # 2. Fallback: Grab the highest version "Secondary" metric if no Primary exists
+    # Fallback: Grab the highest version "Secondary" metric if no Primary exists
     for key in sorted_metric_keys:
         if metrics[key]:
             return extract_data(metrics[key][0])
@@ -96,19 +91,19 @@ def evaluate_node(node, target_vendor, target_product, parent_operator):
             vuln_vendor = cpe_fields[3].lower()
             vuln_product = cpe_fields[4].lower()
             
-            # 1. It's our target application (handles exact matches and aliases like acrobat_dc)
+            # target application (exact vendor/product matches)
             is_target_app = (vuln_vendor == target_vendor and vuln_product == target_product)
 
             if is_target_app:
                 target_sw = cpe_fields[10].lower()
                 match_results.append(target_sw in ['*', '-'] or 'windows' in target_sw)
             
-            # 2. It's an Operating System requirement (Index 2 denotes App vs OS vs Hardware)
+            # Operating System requirement (Index 2 denotes App vs OS vs Hardware)
             elif cpe_fields[2] == "o":
                 is_windows_os = ("windows" in vuln_vendor or "windows" in vuln_product)
                 match_results.append(is_windows_os)
                 
-            # 3. It's an unrelated application
+            # unrelated application
             else:
                 match_results.append(True if node_operator == "AND" else False)
 
@@ -139,21 +134,16 @@ def is_windows_applicable(vuln, target_vendor, target_product):
                 
     return False
 
-# ==========================================
 # MAIN API CALL
-# ==========================================
-
 def query_cves(cpe_string, only_kevs=False):
     query_fields = cpe_string.split(":")
     target_vendor = query_fields[3].lower() if len(query_fields) > 3 else ""
     target_product = query_fields[4].lower() if len(query_fields) > 4 else ""
-# Build the URL string manually for value-less flags to prevent 'requests' from stripping them
     request_url = f"{NVD_CVE_API_URL}?noRejected"
     
     if only_kevs:
         request_url += "&hasKev"
 
-    # Only put key/value pairs in the params dictionary
     response = requests.get(
         request_url,
         params={"virtualMatchString": cpe_string},
@@ -192,10 +182,8 @@ def query_cves(cpe_string, only_kevs=False):
 
     return cves
 
-# ==========================================
-# SCRIPT EXECUTION
-# ==========================================
 
+# MAIN
 def main():
     start_time = time.time()
 

@@ -4,16 +4,17 @@ import json
 import sys
 import csv
 import datetime
+import getpass
 
 urllib3.disable_warnings()
 
-#Authentication
+# Authentication
 current_date = datetime.date.today()
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
 ctd_ip = input("Enter CTD IP or hostname: ").strip()
 username = input("Enter CTD username: ").strip()
-password = input("Enter CTD password: ").strip()
+password = getpass.getpass("Enter CTD password: ").strip()
 
 auth = {"username": username, "password": password}
 headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
@@ -32,13 +33,12 @@ ctd_auth_token = check_user_pass['token']
 getauthheaders = {'Authorization': ctd_auth_token}
 getauthdata = {'auth': 'inherit auth from parent'}
 
-#CSV setup
+# CSV setup
 asset_filename = f"total_assets_{timestamp}.csv"
-asset_fieldnames = ['id', 'name', 'ipv4', 'ipv6', 'vendor', 'model']
+asset_fieldnames = ['id', 'name', 'ipv4', 'ipv6', 'vendor', 'model', 'firmware', 'os']
 total_assets_processed = 0
-skipped_assets_count = 0
 
-#Fetch all Assets
+# Fetch all Assets
 with open(asset_filename, mode='w', newline='', encoding='utf-8') as csvfile:
     writer = csv.DictWriter(csvfile, fieldnames=asset_fieldnames)
     writer.writeheader()
@@ -66,9 +66,6 @@ with open(asset_filename, mode='w', newline='', encoding='utf-8') as csvfile:
             asset_list = data['objects']
             
             for asset in asset_list:
-                
-                asset_name = str(asset.get('name', '')).lower()
-
                 row_data = {}
                 
                 for field in asset_fieldnames:
@@ -92,10 +89,9 @@ with open(asset_filename, mode='w', newline='', encoding='utf-8') as csvfile:
             print("Asset extraction complete.\n")
             break
 
-#Final Summary
+# Final Summary
 print("Summary of Asset Processing")
 print("-" * 35)
 print(f"Total valid assets saved : {total_assets_processed:,}")
-print(f"Network groups skipped  : {skipped_assets_count:,}")
-print(f"Data written to file    : {asset_filename}")
+print(f"Data written to file     : {asset_filename}")
 print("-" * 35)

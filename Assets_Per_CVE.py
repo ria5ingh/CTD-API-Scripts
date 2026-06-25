@@ -1,43 +1,35 @@
 # =============================================================================
-# 📄 Script Metadata
+# Script Metadata
 # -----------------------------------------------------------------------------
-# Date       : 2025-08-05
-# Author     : Randy Benn
-# Version    : 1.4
-# Contact    : randy.b@clarotygov.us
+# Author     : Randy Benn & Ria Singh
 #
-# 📝 Description:
+# Description:
 # This script connects to a Claroty CTD (Continuous Threat Detection) server,
 # authenticates using provided credentials, and retrieves a list of confirmed
 # CVEs (Common Vulnerabilities and Exposures) along with associated assets.
 # Output is written to a CSV file which can be opened in Excel or other 
 # spreadsheet application.
-#
-# Instructions:
-# Edit the details in the 'CTD Server Info' section below.
-# No further edits are required.
-# 
 # =============================================================================
-
 import requests
 import urllib3
 import json
 import datetime
 import sys
 import csv
+import getpass
 
 urllib3.disable_warnings()
 
-# 📅 Setup date and timestamp
+#Setup date and timestamp
 current_date = datetime.date.today()
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
-# 🔐 CTD Server Info
+#CTD Server Info
 ctd_ip = input("Enter CTD IP or hostname: ").strip()
 username = input("Enter CTD username: ").strip()
-password = input("Enter CTD password: ").strip()
+password = getpass.getpass("Enter CTD password: ").strip()
 
-# 🔑 Authentication
+#Authentication
 auth = {"username": username, "password": password}
 headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
 
@@ -53,10 +45,10 @@ ctd_auth_token = check_user_pass['token']
 getauthheaders = {'Authorization': ctd_auth_token}
 getauthdata = {'auth': 'inherit auth from parent'}
 
-print(f"🔗 Connecting to CTD at https://{ctd_ip}")
-print(f"📆 Date: {current_date}\n")
+print(f"Connecting to CTD at https://{ctd_ip}")
+print(f"Date: {current_date}\n")
 
-# 📄 CSV setup for CVEs
+# CSV setup for CVEs
 cve_filename = f"cve_ids_list_{timestamp}.csv"
 cve_fieldnames = ['cve_id', 'confirmed_assets_count']
 
@@ -64,14 +56,14 @@ valid_count = 0
 skipped_count = 0
 cve_list = []
 
-# 📦 Fetch confirmed CVEs
+# Fetch confirmed CVEs
 with open(cve_filename, mode='w', newline='', encoding='utf-8') as cve_csvfile:
     cve_writer = csv.DictWriter(cve_csvfile, fieldnames=cve_fieldnames)
     cve_writer.writeheader()
 
     page = 1
     while True:
-        print(f"📄 Fetching CVEs: page {page}...")
+        print(f"Fetching CVEs: page {page}...")
         asset_params = {
             'page': str(page),
             'per_page': '500',
@@ -99,16 +91,16 @@ with open(cve_filename, mode='w', newline='', encoding='utf-8') as cve_csvfile:
                     skipped_count += 1
             page += 1
         else:
-            print("✅ CVE list complete. No more data found.")
+            print("CVE list complete. No more data found.")
             break
 
-# 📊 CVE Summary
-# print(f"\n📦 Filtered CVE list exported to file: {cve_filename}")
+# CVE Summary
+# print(f"\n Filtered CVE list exported to file: {cve_filename}")
 print(f"✅ Confirmed CVEs: {valid_count:,}")
 print(f"🚫 Potential CVEs (skipped): {skipped_count:,}")
-print(f"📊 Total CVEs processed: {valid_count + skipped_count:,}\n")
+print(f"Total CVEs processed: {valid_count + skipped_count:,}\n")
 
-# 📁 Combined output CSV for all assets
+# Combined output CSV for all assets
 asset_filename = f"assets_per_cve_list{timestamp}.csv"
 asset_fieldnames = ['source_cve_id','Item','id','class_type','name', 'ipv4', 'ipv6','mac','vendor','os','model',
                     'firmware','serial_number','num_alerts','insight_names']
@@ -118,7 +110,7 @@ with open(asset_filename, mode='w', newline='', encoding='utf-8') as csvfile:
     writer = csv.DictWriter(csvfile, fieldnames=asset_fieldnames, extrasaction='ignore')
     writer.writeheader()
 
-    # 🔍 Loop through each CVE and fetch asset data
+    # Loop through each CVE and fetch asset data
     cve_counter = 1  # Start counter
 
     for cve_id in cve_list:
@@ -167,6 +159,6 @@ print("-"*42)
 print(f"{'✅ Confirmed CVEs':<30} {valid_count:>10,}")
 print(f"{'🚫 Potential CVEs (skipped)':<30} {skipped_count:>10,}")
 print("-"*42)
-print(f"{'📊 Total processed CVEs':<30} {valid_count + skipped_count:>10,}")
+print(f"{'Total processed CVEs':<30} {valid_count + skipped_count:>10,}")
 
-print(f"\n📦 All data written to file: {asset_filename}")
+print(f"\nAll data written to file: {asset_filename}")

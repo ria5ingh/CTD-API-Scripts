@@ -4,6 +4,8 @@ import sys
 import csv
 import datetime
 import json
+import getpass
+
 
 urllib3.disable_warnings()
 
@@ -12,7 +14,7 @@ timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
 ctd_ip = input("Enter CTD IP or hostname: ").strip()
 username = input("Enter CTD username: ").strip()
-password = input("Enter CTD password: ").strip()
+password = getpass.getpass("Enter CTD password: ").strip()
 
 auth_payload = {"username": username, "password": password}
 doauth = requests.post(f"https://{ctd_ip}/auth/authenticate", verify=False, json=auth_payload)
