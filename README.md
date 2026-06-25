@@ -1,6 +1,6 @@
 # CTD API Scripts
 
-This is a collection of Python scripts to automate commonly requested or custom tasks using the CTD API. Running these scripts will query your CTD instance and generate one or more CSV files detailing specific relationships as per the script.
+This is a collection of Python scripts to automate commonly requested or custom tasks using the CTD REST API. Running these scripts will query your CTD instance and generate one or more CSV files detailing specific relationships as per the script.
 
 ### Prerequisites
 
@@ -25,7 +25,7 @@ This is a collection of Python scripts to automate commonly requested or custom 
     * `program, vendor, version`: describes the program, vendor, and version for each program
     * `in_ctd`: "**yes**" if the program's KEVs are already tracked by CTD, (the last of tracked vendor and programs are in `cve_program_matcher_cut.csv`). "**no**" if the program is *not* natively tracked by CTD. 
 
-5. **`cpenameV5.py`**: generates a CSV file that lists all programs AND each program's "cpeName" (if it exists).
+5. **`CPE_Name.py`**: generates a CSV file that lists all programs AND each program's "cpeName" (if it exists).
     - The "**cpeName**" is a unique identifier given to programs in the NVD database, typically formatted as `cpe:2.3:a:{vendor}:{program}:{version}:*:*:*:*:*:*:*`, where each `*` represents fields like edition, target software/hardware, etc.
     - Given an input csv file with a list of programs in the format `[program, vendor, version, in_ctd]`, this script standardizes all program names, using "cleaned" program name to query the NVD database for the matching cpeName string. It matches results with strict substring matching first, and token-based matching as a fallback. 
     - Outputs a csv file with columns: `[program, vendor, version, in_ctd, cleaned_name, cpe_name, confidence]`
@@ -41,7 +41,7 @@ This is a collection of Python scripts to automate commonly requested or custom 
         * "**O**" (Override): The program search was overridden by a pre-mapped CPE string. (Used for common programs to reduce API calls. ie, Microsoft Office programs, common browsers like Chrome, etc). If a program title *contains* a string that is pre-mapped, it will automatically be overridden, hence, the match may not be 100% guaranteed.
         * "**N**" (N/A): no valid cpeName matches were found.
 
-6. **`cve_matchv4.py`**: Given an input CSV file containing valid CPE names and versions (the output from `cpenameV5.py`), this script queries the NVD API to find CVEs that match the CPE's version and software (Windows OS), generating a csv file with all the CVEs found. NOTE: this script finds CVEs for applications only applicable to Windows environments. It does not return CVEs for programs that also require other specific hardware configurations. 
+6. **`CVE_Matches.py`**: Given an input CSV file containing valid CPE names and versions (the output from `cpenameV5.py`), this script queries the NVD API to find CVEs that match the CPE's version and software (Windows OS), generating a csv file with all the CVEs found. NOTE: this script finds CVEs for applications only applicable to Windows environments. It does not return CVEs for programs that also require other specific hardware configurations. 
     - User is prompted for the input/output filenames, an optional limit on how many CVEs to fetch per program, and whether to strictly filter for only Known Exploited Vulnerabilities (KEVs).
     - Outputs a csv file with columns: `[Program, Version, Queried_CPE, Confidence, CVE, CVSS_Version, Base_Score, Base_Severity, CISA_KEV]`
 
@@ -54,9 +54,11 @@ This is a collection of Python scripts to automate commonly requested or custom 
     * `Base_Severity`: The qualitative severity rating (e.g., LOW, MEDIUM, HIGH, CRITICAL).
     * `CISA_KEV`: The official CISA vulnerability name if the CVE is currently listed on the CISA Known Exploited Vulnerabilities catalog. If it is not on the catalog, this will read "N/A".
 
+7. **`Full_Asset_List.py`**: Given CTD credentials, generates a full asset inventory and outputs a CSV file with columns `[id, name, ipv4, ipv6, vendor, model, firmware, os]`.
+
     
 ### Instructions
-Running the scripts will prompt for your hostname or IP, username, and password for your CTD instance. Once inputed, the scripts will query the API and create the corresponding CSVs in your local directory. 
+Clone the repository, install requirements, (including an NVD API key for `CPE_Names.py` and `CVE_Matches.py`, stored as an environment variable in your system), and run the scripts (VSCode or other IDE recommended). Running the scripts will prompt you for the hostname or IP, username, and password of your CTD instance. Once inputed, the scripts will query the CTD REST API and create the corresponding CSVs in your local directory. 
 
 ### Future Development
 - ~~CVEs for 3rd-party Windows Programs script (integrate with NVD)~~
