@@ -9,13 +9,16 @@ This is a collection of Python scripts to automate commonly requested or custom 
 - request API key for NVD, create a .env file and enter the key as NVD_KEY = "your key"
 
 ### Current Scripts
-1. **`Assets_Per_CVE.py`**: generates two CSV files given the hostname/IP of the CTD instance and credentials. 
+1. **`Assets_Per_CVEV2.py`**: generates JSON output *OR* two CSV files given the hostname/IP of the CTD instance and credentials. 
     - **`cve_ids_list.csv`**: Lists confirmed CVEs along with # of assets corresponding to each CVE.
     - **`assets_per_cve_list.csv`**: Lists all individual assets per confirmed CVE.
+    - **`assets_per_cve_list.json`**: lists all assets per confirmed CVE as json file. 
 
-2. **`CVEs_Per_Asset.py`**: generates two CSV files given the hostname/IP of the CTD instance and credentials. 
+2. **`CVEs_Per_AssetV2.py`**: generates JSON output *OR* two CSV files given the hostname/IP of the CTD instance and credentials. 
     - **`assets_cve_counts_list.csv`**: Lists all assets along with # of confirmed CVEs per asset.
     - **`cves_per_asset_list.csv`**: Lists all confirmed CVEs per asset.
+    - **`cves_per_assets_list.json`**: lists all CVEs per asset as json file. 
+
 
 3. **`Get_Edge_Host.py`**: example/helper script that identifies the Windows 10/11 Edge Host from a CTD instance, given the hostname/IP and credentials. Prints output to terminal. (Currently only supports Win 10/11 hosts, future development includes identifying Linux and other Win hosts).
 
