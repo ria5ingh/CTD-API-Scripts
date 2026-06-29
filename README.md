@@ -57,7 +57,7 @@ This is a collection of Python scripts to automate commonly requested or custom 
     * `Base_Severity`: The qualitative severity rating (e.g., LOW, MEDIUM, HIGH, CRITICAL).
     * `CISA_KEV`: The official CISA vulnerability name if the CVE is currently listed on the CISA Known Exploited Vulnerabilities catalog. If it is not on the catalog, this will read "N/A".
 
-7. **`Full_Asset_List.py`**: Given CTD credentials, generates a full asset inventory and outputs a CSV file with columns `[id, name, ipv4, ipv6, vendor, model, firmware, os]`.
+7. **`Full_Asset_ListV2.py`**: Given CTD credentials, generates a full asset inventory and outputs a CSV *or* JSON file with columns `[id, name, ipv4, ipv6, vendor, model, firmware, os, mac]`. Optional parameters are included and can be commented out/uncommented in the script. 
 
     
 ### Instructions
