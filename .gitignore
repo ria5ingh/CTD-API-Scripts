@@ -1,5 +1,6 @@
 # Ignore generated CSV output files
 *.csv
+*.json
 !*cve_program_matcher_cut.csv
 
 .env
