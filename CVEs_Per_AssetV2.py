@@ -178,12 +178,12 @@ def main():
     ctd_ip = input("Enter CTD IP or hostname: ").strip()
     username = input("Enter CTD username: ").strip()
     password = getpass.getpass("Enter CTD password: ").strip()
-    
+    headers = authenticate(ctd_ip, username, password)
+
     output_format = get_output_preference()
     cutoff_date = get_time_filter()
     
     # API Calls
-    headers = authenticate(ctd_ip, username, password)
     asset_cve_counts, asset_cve_mapping, asset_info = fetch_assets(ctd_ip, headers, cutoff_date)
     fetch_cves(ctd_ip, headers, asset_cve_counts, asset_cve_mapping)
     
