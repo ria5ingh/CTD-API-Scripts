@@ -35,7 +35,7 @@ getauthdata = {'auth': 'inherit auth from parent'}
 
 # CSV setup
 asset_filename = f"total_assets_{timestamp}.csv"
-asset_fieldnames = ['id', 'name', 'ipv4', 'ipv6', 'vendor', 'model', 'firmware', 'os']
+asset_fieldnames = ['id', 'name', 'ipv4', 'ipv6', 'vendor', 'model', 'firmware', 'os', 'mac']
 total_assets_processed = 0
 
 # Fetch all Assets
