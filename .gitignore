@@ -5,3 +5,9 @@
 
 .env
 .venv/
+
+#deprecated
+Assets_Per_CVE.py
+CVEs_Per_Asset.py
+Full_Asset_List.py
+Get_Edge_Progs.py
