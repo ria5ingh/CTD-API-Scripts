@@ -55,6 +55,8 @@ def fetch_all_assets(ctd_ip, headers, fieldnames):
     print("Fetching Assets...")
     parsed_assets = []
     page = 1
+
+    fields_param = ",;$".join(fieldnames)
     
     while True:
         print(f" - Processing page {page}...")
@@ -64,7 +66,8 @@ def fetch_all_assets(ctd_ip, headers, fieldnames):
             'per_page': '500',
             'ghost__exact': 'false',
             'valid__exact': 'true',        
-            'special_hint__exact': '0' # 0 = eUnicast
+            'special_hint__exact': '0', # 0 = eUnicast
+            'fields': fields_param # Server-side filtering
         }
 
         # The 'auth: inherit auth from parent' payload as required by some Claroty endpoints
