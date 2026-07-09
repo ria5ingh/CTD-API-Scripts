@@ -2,6 +2,12 @@
 *.csv
 *.json
 !*cve_program_matcher_cut.csv
+!Assets_Per_CVE/Examples/*
+!CVEs_Per_Asset/Examples/*
+!Full_Asset_List/Examples/*
+!Get_Edge_Progs/Examples/*
+!NVD_Matching/Examples/*
+
 
 .env
 .venv/
