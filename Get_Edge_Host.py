@@ -30,7 +30,7 @@ def main():
     print("Successful Login.\n")
 
     #extract first matching edge host ID
-    print("Querying assets for a Windows 10/11 host with an active edge_id.")
+    print("Querying assets for a Windows host with an active edge_id.")
     edge_host_id = None
     asset_page = 1
     asset_per_page = 500
@@ -49,11 +49,11 @@ def main():
             for asset in objects:
                 r_id = asset.get('resource_id')
                 edge_id = asset.get(';$edge_id', asset.get('edge_id'))
-                os_name = asset.get(';$os', asset.get('os', ''))
+                os_name = asset.get(';$os', asset.get('os', '')).lower()
                 
-                #check if edge_id is not null AND OS is Windows 10/11
+                #check if edge_id is not null AND OS is Windows
                 if edge_id is not None and isinstance(os_name, str):
-                    if "Windows 10" in os_name or "Windows 11" in os_name:
+                    if "windows" in os_name:
                         edge_host_id = r_id
                         print(f"Match found. Asset ID: {edge_host_id} | OS: {os_name} | Edge ID: {edge_id}\n")
                         break 

@@ -20,7 +20,7 @@ This is a collection of Python scripts to automate commonly requested or custom 
     - **`cves_per_assets_list.json`**: lists all CVEs per asset as json file. 
 
 
-3. **`Get_Edge_Host.py`**: example/helper script that identifies the Windows 10/11 Edge Host from a CTD instance, given the hostname/IP and credentials. Prints output to terminal. (Currently only supports Win 10/11 hosts, future development includes identifying Linux and other Win hosts).
+3. **`Get_Edge_Host.py`**: example/helper script that identifies the Windows Edge Host from a CTD instance, given the hostname/IP and credentials. Prints output to terminal. (Future development includes identifying Linux and other Win hosts).
 
 4. **`Get_Edge_Progs.py`**: Identifies Windows 10/11 Edge Host (using the same logic from Get_Edge_Host.py) and generates a CSV file labeled **`windows_programs_list.csv`**, with columns `[program, vendor, version, in_ctd]`
 
