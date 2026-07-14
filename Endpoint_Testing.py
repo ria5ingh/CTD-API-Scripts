@@ -1,8 +1,11 @@
 import requests
 import urllib3
+import urllib.parse
 import json
 import sys
 import getpass
+from dotenv import load_dotenv
+import os
 
 # Disable SSL warnings for self-signed certificates common on local appliances
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -40,6 +43,36 @@ def get_target_limit():
             return int(user_input)
         print("Invalid input. Please enter a positive integer or press Enter.")
 
+def handle_api_response(data, endpoint_name):
+    """
+    Safely parses the API response. If it's not a dict with an 'objects' list,
+    it prints the raw return directly to the terminal for debugging.
+    """
+    # Case 1: If the response is a direct list of items rather than a wrapped dictionary
+    if isinstance(data, list):
+        print(f"\n[NOTE] Endpoint '{endpoint_name}' returned a raw list directly (no 'objects' wrapper).")
+        return data
+
+    # Case 2: Standard expected dictionary format
+    if isinstance(data, dict):
+        if 'objects' in data:
+            return data['objects']
+        else:
+            print(f"\n[WARNING] Received a dictionary from '{endpoint_name}' but 'objects' key was missing!")
+            print("--- RAW API RESPONSE KEYS ---")
+            print(list(data.keys()))
+            print("\n--- RAW API RESPONSE CONTENT ---")
+            print(json.dumps(data, indent=4))
+            print("--------------------------------")
+            return []
+            
+    # Case 3: None or unexpected string format
+    print(f"\n[ERROR] Unexpected data type received from '{endpoint_name}': {type(data)}")
+    print("--- RAW API RESPONSE CONTENT ---")
+    print(json.dumps(data, indent=4) if data else "Empty Response (None)")
+    print("--------------------------------")
+    return []
+
 def fetch_paginated_assets(ctd_ip, headers, limit=None):
     """Paginates through the endpoint, respecting the user's limit choice."""
     all_objects = []
@@ -53,10 +86,8 @@ def fetch_paginated_assets(ctd_ip, headers, limit=None):
     print("\nStarting paginated API extraction...")
     
     while True:
-        # If user defined a limit, calculate how many items are still left to fetch
         remaining = limit - len(all_objects) if limit is not None else None
         
-        # Break early if we've fulfilled the user's requested total
         if remaining is not None and remaining <= 0:
             break
 
@@ -76,7 +107,9 @@ def fetch_paginated_assets(ctd_ip, headers, limit=None):
             'special_hint__exact': 0, #default for unicast
             
             #MANUALLY ADD FILTERS/FIELDS HERE FOR TESTING
-            'fields' : 'custom_informations,;$display_name'
+            'fields' : 'asset_type,;$name',
+            #testing
+            'purdue_level__exact' : '1,;$1.5,;$2'
         }
         
         body_data = json.dumps({'auth': 'inherit auth from parent'})
@@ -91,7 +124,7 @@ def fetch_paginated_assets(ctd_ip, headers, limit=None):
             break
 
         # Extract the items array
-        page_objects = data.get('objects', [])
+        page_objects = handle_api_response(data, "/ranger/assets")
         
         if not page_objects:
             print("No more items found on the server.")
@@ -101,6 +134,84 @@ def fetch_paginated_assets(ctd_ip, headers, limit=None):
         print(f"   Collected {len(page_objects)} items. Total so far: {len(all_objects)}")
         
         # If the server returned fewer items than we asked for, it means we hit the final page
+        if len(page_objects) < current_per_page:
+            print("Reached the end of the server data.")
+            break
+
+        page += 1
+
+    return all_objects
+
+def fetch_assets_with_insights(ctd_ip, headers, limit=None):
+    """Paginates through assets with insights (high vulnerability matching)."""
+    all_objects = []
+    page = 1
+    per_page = 100  # Typically insights endpoints return heavier payloads, default to 100 per call
+    
+    if limit and limit < per_page:
+        per_page = limit
+
+    print("\nStarting paginated assets with insights extraction...")
+    
+    while True:
+        remaining = limit - len(all_objects) if limit is not None else None
+        
+        if remaining is not None and remaining <= 0:
+            break
+
+        current_per_page = per_page
+        if remaining is not None and remaining < per_page:
+            current_per_page = remaining
+
+        print(f" - Fetching page {page} (Requesting {current_per_page} items)...")
+        
+        # EDIT PARAMS HERE FOR TESTING
+        # All filters on this endpoint are optional, edit below as needed
+
+    # WORKING FIELDS (Safe to use in combinations):
+    # --> name only works with the below combos
+    # ['name', 'site_name', 'ipv4', 'ipv6', 'mac', 'asset_type', 'os', 'model', 'vendor', 'firmware', 'criticality', 'insights', 'total_cves_count']
+
+    # BROKEN FIELDS (Do not use on this endpoint):
+    # --> name does NOT work with these:
+    # ['id', 'site_id', 'resource_id', 'ghost', 'risk_level', 'network_id']
+    
+    # everything works with these but 'name' 
+    # all_fields = ["id", "site_id", "resource_id", "ghost", "risk_level", "site_name", "network_id", "ipv4", "ipv6", 
+    #               "mac", "asset_type", "os", "model", "vendor", "firmware", "criticality", "insights", "total_cves_count"]
+
+    # total_cves_count only works with insights
+
+
+        insight_params = {
+            'page': str(page),
+            'per_page': str(current_per_page),
+            'ghost__exact': 'false', #default
+            #'valid__exact': 'true', #default
+            'special_hint__exact': 0, #default for unicast
+            'fields': 'name'
+        }
+        
+        body_data = json.dumps({'auth': 'inherit auth from parent'})
+        full_url = f"https://{ctd_ip}/ranger/assets_with_insights"
+
+        try:
+            response = requests.get(full_url, verify=False, data=body_data, headers=headers, params=insight_params)
+            response.raise_for_status()
+            data = response.json()
+        except Exception as e:
+            print(f"Error reading page {page}: {e}")
+            break
+
+        page_objects = handle_api_response(data, "/ranger/assets_with_insights")
+        
+        if not page_objects:
+            print("No more items found on the server.")
+            break
+            
+        all_objects.extend(page_objects)
+        print(f"   Collected {len(page_objects)} items. Total so far: {len(all_objects)}")
+        
         if len(page_objects) < current_per_page:
             print("Reached the end of the server data.")
             break
@@ -130,41 +241,129 @@ def fetch_single_asset(ctd_ip, headers, resource_id):
         print(f"An unexpected error occurred: {e}")
         return None
 
+def fetch_paginated_insights_summary(ctd_ip, headers, limit=None):
+    """Paginates through the insights summary endpoint."""
+    all_objects = []
+    page = 1
+    per_page = 50  # Recommended default from API docs
+    
+    print("\nStarting paginated insights summary extraction...")
+    
+    print(f" - Fetching page {page} (Requesting insights)...")
+        
+    # Build query params
+    summary_params = {
+        'page': page,
+        'per_page': per_page,
+        'format' : 'insight_page',              # Default for summary
+        'sort' : '-risk_level',                  # Default (order by risk level)
+        #'Content-Type' : 'application/json', # Default
+        #'insight_excluded__types__in' : '1,;$23,;$2,;$24,;$4,;$3' #default exclusion
+        'ghost__exact' : 'false',            # Default
+        'special_hint__exact': '0',         # Default unicast (0)
+        'site_id__exact' : '1',             # Default 1
+        'insight_status__exact': '0'        # Default Open (0)
+    }
+        
+    body_data = json.dumps({'auth': 'inherit auth from parent'})
+    full_url = f"https://{ctd_ip}/ranger/insights_summary"
+
+    try:
+        response = requests.get(full_url, verify=False, data=body_data, headers=headers, params=summary_params)
+        response.raise_for_status()
+        data = response.json()
+    except Exception as e:
+        print(f"Error reading page {page}: {e}")
+        if 'response' in locals() and hasattr(response, 'text'):
+            print("--- RAW UNPARSED SERVER RESPONSE ---")
+            print(response.text)
+            print("------------------------------------")
+
+    page_objects = handle_api_response(data, "/ranger/insights_summary")
+    if not page_objects:
+        print("No more insights found on the server.")
+            
+    all_objects.extend(page_objects)
+    print(f"   Collected {len(page_objects)} insights. Total so far: {len(all_objects)}")
+
+    return all_objects
+
+def fetch_insight_details(ctd_ip, headers, insight_name):
+    """Paginates through the insight details endpoint."""
+    all_objects = []
+    page = 1
+    per_page = 50  
+
+    print(f"\nStarting {insight_name} extraction...")
+    
+    # Auto-encode the path segment cleanly
+    insight_path = urllib.parse.quote(insight_name)
+    full_url = f"https://{ctd_ip}/ranger/insight_details/{insight_path}"
+
+    print(f" - Fetching page {page} (Requesting {per_page} items)...")
+    
+    params = {
+        'format': 'insight_page',
+        'page': page,
+        'per_page': per_page,
+        'ghost__exact' : 'false',            # Default
+        'special_hint__exact': '0',         # Default unicast (0)
+        'site_id__exact' : '1',             # Default 1
+        'insight_status__exact': '0',        # Default Open (0)
+        'fields': ''  
+
+    }
+        
+    body_data = json.dumps({'auth': 'inherit auth from parent'})
+
+    try:
+        response = requests.get(full_url, verify=False, data=body_data, headers=headers, params=params)
+        response.raise_for_status()
+        data = response.json()
+    except Exception as e:
+        print(f"Error reading page {page}: {e}")
+
+    page_objects = handle_api_response(data, f"/ranger/insight_details/{insight_path}")
+    if not page_objects:
+        print("No more insight assets found.")
+        
+    all_objects.extend(page_objects)
+    print(f"   Collected {len(page_objects)} assets. Total so far: {len(all_objects)}")
+    
+    return all_objects
+
 def main():
     # 1. Setup & Authentication
-    ctd_ip = input("Enter the CTD IP address: ").strip()
-    username = input("Enter the username: ").strip()
-    password = input("Enter the password: ").strip()
-
+    load_dotenv()  # Load environment variables from .env file if present
+    ctd_ip = os.getenv("CTD_HOST")
+    username = os.getenv("CTD_USERNAME")
+    password = os.getenv("CTD_PASSWORD")
+    
     headers = authenticate(ctd_ip, username, password)
 
     # 2. Select Test Mode
     print("Select an endpoint test option:")
     print(" [1] GET /ranger/assets (List & Paginate)")
     print(" [2] GET /ranger/assets/{resource_id} (Single Asset)")
-    mode = input("Enter choice (1 or 2): ").strip()
+    print(" [3] GET /ranger/assets_with_insights (List Assets with Insights)")
+    print(" [4] GET /ranger/insights_summary (List Insights Summary) broken")
+    print(" [5] GET /ranger/insight_details/{insight_name}")
+    mode = input("Enter choice (1, 2, 3, 4, or 5): ").strip()
 
     if mode == "1":
-        # 3a. Get User Limit Preference and run paginated lookup
         limit = get_target_limit()
         assets = fetch_paginated_assets(ctd_ip, headers, limit=limit)
-
-        # 4a. Print results to terminal
         print("\n" + "=" * 60)
         print(json.dumps(assets, indent=4))
         print("=" * 60)
-        print(f"FINAL OUTPUT ({len(assets)} items gathered):")
+        print(f"FINAL OUTPUT ({len(assets)} items gathered from standard asset list):")
 
     elif mode == "2":
-        # 3b. Get specific resource ID and query single endpoint
         resource_id = input("Enter the asset resource_id: ").strip()
         if not resource_id:
             print("Resource ID cannot be empty.")
             sys.exit(1)
-            
         asset_data = fetch_single_asset(ctd_ip, headers, resource_id)
-        
-        # 4b. Print single result to terminal
         if asset_data:
             print("\n" + "=" * 60)
             print(json.dumps(asset_data, indent=4))
@@ -172,6 +371,34 @@ def main():
             print(f"FINAL OUTPUT: Successfully fetched asset '{resource_id}'")
         else:
             print(f"Could not retrieve data for asset '{resource_id}'.")
+
+    elif mode == "3":
+        limit = get_target_limit()
+        assets_with_insights = fetch_assets_with_insights(ctd_ip, headers, limit=limit)
+        print("\n" + "=" * 60)
+        print(json.dumps(assets_with_insights, indent=4))
+        print("=" * 60)
+        print(f"FINAL OUTPUT ({len(assets_with_insights)} items gathered from assets with insights):")
+
+    elif mode == "4":
+        limit = get_target_limit()
+        insights_summary = fetch_paginated_insights_summary(ctd_ip, headers, limit=limit)
+        
+        print("\n" + "=" * 60)
+        print(json.dumps(insights_summary, indent=4))
+        print("=" * 60)
+        print(f"FINAL OUTPUT ({len(insights_summary)} items gathered from insights summary list):")
+
+    elif mode == "5":
+        insight_name_input = input("Enter an insight name: ").strip()
+        
+        risky_assets = fetch_insight_details(ctd_ip, headers, insight_name=insight_name_input)
+        
+        print("\n" + "=" * 60)
+        print(json.dumps(risky_assets, indent=4))
+        print("=" * 60)
+        print(f"FINAL OUTPUT ({len(risky_assets)} items gathered from {insight_name_input}):")
+    
             
     else:
         print("Invalid menu choice. Exiting.")
