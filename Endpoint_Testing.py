@@ -6,6 +6,7 @@ import sys
 import getpass
 from dotenv import load_dotenv
 import os
+import datetime
 
 # Disable SSL warnings for self-signed certificates common on local appliances
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -242,13 +243,12 @@ def fetch_single_asset(ctd_ip, headers, resource_id):
         return None
 
 def fetch_paginated_insights_summary(ctd_ip, headers, limit=None):
-    """Paginates through the insights summary endpoint."""
+    """Fetches the insights summary endpoint, cleans the data, and exports to JSON."""
     all_objects = []
     page = 1
     per_page = 50  # Recommended default from API docs
     
-    print("\nStarting paginated insights summary extraction...")
-    
+    print("\nStarting insights summary extraction...")
     print(f" - Fetching page {page} (Requesting insights)...")
         
     # Build query params
@@ -257,12 +257,10 @@ def fetch_paginated_insights_summary(ctd_ip, headers, limit=None):
         'per_page': per_page,
         'format' : 'insight_page',              # Default for summary
         'sort' : '-risk_level',                  # Default (order by risk level)
-        #'Content-Type' : 'application/json', # Default
-        #'insight_excluded__types__in' : '1,;$23,;$2,;$24,;$4,;$3' #default exclusion
-        'ghost__exact' : 'false',            # Default
-        'special_hint__exact': '0',         # Default unicast (0)
-        'site_id__exact' : '1',             # Default 1
-        'insight_status__exact': '0'        # Default Open (0)
+        'ghost__exact' : 'false',                # Default, MAY EXCLUDE
+        'special_hint__exact': '0',              # Default unicast (0)
+        'site_id__exact' : '1',                  # Default 1
+        'insight_status__exact': '0'             # Default Open (0)
     }
         
     body_data = json.dumps({'auth': 'inherit auth from parent'})
@@ -276,15 +274,36 @@ def fetch_paginated_insights_summary(ctd_ip, headers, limit=None):
         print(f"Error reading page {page}: {e}")
         if 'response' in locals() and hasattr(response, 'text'):
             print("--- RAW UNPARSED SERVER RESPONSE ---")
-            print(response.text)
+            print(response.text[:1000]) # Truncated to avoid flooding
             print("------------------------------------")
 
     page_objects = handle_api_response(data, "/ranger/insights_summary")
+    
     if not page_objects:
         print("No more insights found on the server.")
+    else:
+        # DATA CLEANUP: Remove unwanted headers
+        for obj in page_objects:
+            if isinstance(obj, dict):
+                obj.pop('headers', None)
+                obj.pop('default_sort', None)
+                obj.pop('other_side_headers', None)
+                obj.pop('other_side_default_sort', None)
             
     all_objects.extend(page_objects)
     print(f"   Collected {len(page_objects)} insights. Total so far: {len(all_objects)}")
+
+    # JSON EXPORT LOGIC
+    if all_objects:
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"insights_summary_{timestamp}.json"
+        
+        print(f"\nWriting output to file to prevent terminal flooding...")
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(all_objects, f, indent=4)
+        print(f"Export complete! Data saved to: {filename}")
+    else:
+        print("\nNo data retrieved to save.")
 
     return all_objects
 
