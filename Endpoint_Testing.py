@@ -308,51 +308,104 @@ def fetch_paginated_insights_summary(ctd_ip, headers, limit=None):
     return all_objects
 
 def fetch_insight_details(ctd_ip, headers, insight_name):
-    """Paginates through the insight details endpoint and saves raw output."""
-    all_objects = []
-    page = 1 #change to while loop
-    per_page = 50  #change to while loop
+    """Paginates through the insight details endpoint and saves accumulated raw output."""
+    page = 1
+    per_page = 100  # Updated to 100 per page
 
     print(f"\nStarting {insight_name} extraction...")
     
     # Auto-encode the path segment cleanly
+    import urllib.parse
     insight_path = urllib.parse.quote(insight_name)
     full_url = f"https://{ctd_ip}/ranger/insight_details/{insight_path}"
 
-    print(f" - Fetching page {page} (Requesting {per_page} items)...")
-    
-    params = {
-        'format': 'insight_page',
-        'page': page,
-        'per_page': per_page,
-        'ghost__exact' : 'false',            # Default
-        'special_hint__exact': '0',         # Default unicast (0)
-        'site_id__exact' : '1',             # Default 1
-        'insight_status__exact': '0',        # Default Open (0)
-        #'fields': ''  
-    }
+    final_data = None
+    total_collected = 0
+
+    while True:
+        print(f" - Fetching page {page} (Requesting {per_page} items)...")
         
-    body_data = json.dumps({'auth': 'inherit auth from parent'})
-    
-    data = None  # We will store the raw server response here
+        params = {
+            'format': 'insight_page',
+            'page': page,
+            'per_page': per_page,
+            'ghost__exact' : 'false',            # Default
+            'special_hint__exact': '0',         # Default unicast (0)
+            'site_id__exact' : '1',             # Default 1
+            'insight_status__exact': '0',        # Default Open (0)
+        }
+            
+        body_data = json.dumps({'auth': 'inherit auth from parent'})
+        data = None  
 
-    try:
-        response = requests.get(full_url, verify=False, data=body_data, headers=headers, params=params)
-        response.raise_for_status()
-        data = response.json()
-    except Exception as e:
-        print(f"Error reading page {page}: {e}")
-        # If it failed but still returned a payload, try to capture it anyway for the JSON dump
-        if 'response' in locals() and hasattr(response, 'text'):
-            try:
-                data = response.json()
-            except:
-                data = {"raw_text_error": response.text}
+        try:
+            response = requests.get(full_url, verify=False, data=body_data, headers=headers, params=params)
+            response.raise_for_status()
+            data = response.json()
+        except Exception as e:
+            print(f"Error reading page {page}: {e}")
+            if 'response' in locals() and hasattr(response, 'text'):
+                try:
+                    data = response.json()
+                except:
+                    data = {"raw_text_error": response.text}
+            
+            # If we couldn't get any data during the error, break the loop
+            if not data:
+                break
+
+        # ---------------------------------------------------------
+        # MERGE PAGINATION LOGIC
+        # ---------------------------------------------------------
+        if isinstance(data, dict):
+            # Extract the actual asset data array from the 'rows' key
+            page_rows = data.get('rows', [])
+            
+            if not page_rows:
+                print("No more rows found on this page. Stopping.")
+                break
+                
+            if final_data is None:
+                # First page: Keep the whole structure (headers, description, etc.)
+                final_data = data 
+            else:
+                # Subsequent pages: Only append the new rows to our master structure
+                final_data['rows'].extend(page_rows)
+                
+            total_collected += len(page_rows)
+            print(f"   Collected {len(page_rows)} rows. Total so far: {total_collected}")
+            
+            # If the server returned fewer items than requested, we hit the end
+            if len(page_rows) < per_page:
+                print("Reached the end of the available server data.")
+                break
+                
+        elif isinstance(data, list):
+            # Fallback just in case a different insight returns a raw list directly
+            if not data:
+                break
+            if final_data is None:
+                final_data = []
+            final_data.extend(data)
+            total_collected += len(data)
+            print(f"   Collected {len(data)} items. Total so far: {total_collected}")
+            
+            if len(data) < per_page:
+                break
+        else:
+            # Unrecognized format, save what we got and break safely
+            if final_data is None:
+                final_data = data
+            print("Unrecognized data format. Stopping pagination.")
+            break
+
+        # Increment for the next loop
+        page += 1
 
     # ---------------------------------------------------------
-    # RAW JSON EXPORT LOGIC (Saves regardless of format)
+    # RAW JSON EXPORT LOGIC 
     # ---------------------------------------------------------
-    if data is not None:
+    if final_data is not None:
         import datetime
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         
@@ -360,25 +413,17 @@ def fetch_insight_details(ctd_ip, headers, insight_name):
         safe_name = insight_name.replace(" ", "_")
         filename = f"{safe_name}_details_{timestamp}.json"
         
-        print(f"\nWriting raw server output to file...")
+        print(f"\nWriting {total_collected} total records to file...")
         with open(filename, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=4)
-        print(f"Export complete! Raw data saved to: {filename}")
+            json.dump(final_data, f, indent=4)
+        print(f"Export complete! File saved to: {filename}")
     else:
         print("\nNo data retrieved from server to save.")
 
-    # ---------------------------------------------------------
-    # Terminal Processing
-    # ---------------------------------------------------------
-    if data is not None:
-        page_objects = handle_api_response(data, f"/ranger/insight_details/{insight_path}")
-        if not page_objects:
-            print("No more insight assets found (or format was unrecognized by handler).")
-        else:
-            all_objects.extend(page_objects)
-            print(f"   Collected {len(page_objects)} assets. Total so far: {len(all_objects)}")
-    
-    return all_objects
+    # Return the rows list back to main() in case it needs to process them further
+    if isinstance(final_data, dict):
+        return final_data.get('rows', [])
+    return final_data
 
 def main():
     # 1. Setup & Authentication
