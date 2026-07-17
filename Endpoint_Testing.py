@@ -308,10 +308,10 @@ def fetch_paginated_insights_summary(ctd_ip, headers, limit=None):
     return all_objects
 
 def fetch_insight_details(ctd_ip, headers, insight_name):
-    """Paginates through the insight details endpoint."""
+    """Paginates through the insight details endpoint and saves raw output."""
     all_objects = []
-    page = 1
-    per_page = 50  
+    page = 1 #change to while loop
+    per_page = 50  #change to while loop
 
     print(f"\nStarting {insight_name} extraction...")
     
@@ -329,11 +329,12 @@ def fetch_insight_details(ctd_ip, headers, insight_name):
         'special_hint__exact': '0',         # Default unicast (0)
         'site_id__exact' : '1',             # Default 1
         'insight_status__exact': '0',        # Default Open (0)
-        'fields': ''  
-
+        #'fields': ''  
     }
         
     body_data = json.dumps({'auth': 'inherit auth from parent'})
+    
+    data = None  # We will store the raw server response here
 
     try:
         response = requests.get(full_url, verify=False, data=body_data, headers=headers, params=params)
@@ -341,13 +342,41 @@ def fetch_insight_details(ctd_ip, headers, insight_name):
         data = response.json()
     except Exception as e:
         print(f"Error reading page {page}: {e}")
+        # If it failed but still returned a payload, try to capture it anyway for the JSON dump
+        if 'response' in locals() and hasattr(response, 'text'):
+            try:
+                data = response.json()
+            except:
+                data = {"raw_text_error": response.text}
 
-    page_objects = handle_api_response(data, f"/ranger/insight_details/{insight_path}")
-    if not page_objects:
-        print("No more insight assets found.")
+    # ---------------------------------------------------------
+    # RAW JSON EXPORT LOGIC (Saves regardless of format)
+    # ---------------------------------------------------------
+    if data is not None:
+        import datetime
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         
-    all_objects.extend(page_objects)
-    print(f"   Collected {len(page_objects)} assets. Total so far: {len(all_objects)}")
+        # Replace spaces with underscores for a cleaner filename
+        safe_name = insight_name.replace(" ", "_")
+        filename = f"{safe_name}_details_{timestamp}.json"
+        
+        print(f"\nWriting raw server output to file...")
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=4)
+        print(f"Export complete! Raw data saved to: {filename}")
+    else:
+        print("\nNo data retrieved from server to save.")
+
+    # ---------------------------------------------------------
+    # Terminal Processing
+    # ---------------------------------------------------------
+    if data is not None:
+        page_objects = handle_api_response(data, f"/ranger/insight_details/{insight_path}")
+        if not page_objects:
+            print("No more insight assets found (or format was unrecognized by handler).")
+        else:
+            all_objects.extend(page_objects)
+            print(f"   Collected {len(page_objects)} assets. Total so far: {len(all_objects)}")
     
     return all_objects
 
