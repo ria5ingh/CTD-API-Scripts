@@ -104,13 +104,13 @@ def fetch_paginated_assets(ctd_ip, headers, limit=None):
             'page': str(page),
             'per_page': str(current_per_page),
             'ghost__exact': 'false', #default
-            'valid__exact': 'true', #default
+            #'valid__exact': 'true', #default
             'special_hint__exact': 0, #default for unicast
             
             #MANUALLY ADD FILTERS/FIELDS HERE FOR TESTING
             'fields' : 'asset_type,;$name',
             #testing
-            'purdue_level__exact' : '1,;$1.5,;$2'
+            #'insight_row_key__exact': 'Managed PLCs (by Rockwell users),;$1,;$236,;$ENG_AB%5CAdministrator,;$2026-05-18T18%3A55%3A47%2B00%3A00'
         }
         
         body_data = json.dumps({'auth': 'inherit auth from parent'})
