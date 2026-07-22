@@ -3,9 +3,9 @@
 # -----------------------------------------------------------------------------
 # Description:
 # This script connects to a Claroty CTD server, authenticates, and retrieves
-# a comprehensive list of all assets. It extracts specific fields and saves 
-# them to either a CSV or JSON file based on user preference, handling 
-# missing or null values gracefully.
+# a comprehensive list of all assets. It extracts specific fields (chosen 
+# dynamically by the user) and saves them to either a CSV or JSON file based 
+# on user preference.
 # =============================================================================
 
 import requests
@@ -50,9 +50,57 @@ def get_output_preference():
             return choice
         print("Invalid input. Please type 'csv' or 'json'.")
 
+def get_fields_input():
+    """Prompts the user to dynamically select which fields to return from the API."""
+    print("\n--- Field Selection ---")
+    mandatory_fields = ['id', 'name']
+    
+    # All available optional fields supported by the endpoint
+    optional_fields = [
+        'ipv4', 'ipv6', 'mac', 'os', 'model', 'vendor', 'firmware', 
+        'site_id', 'resource_id', 'timestamp', 'last_updated', 'approved', 
+        'valid', 'ghost', 'parsed', 'special_hint', 'risk_level', 
+        'last_entity_seen', 'site_name', 'network_id', 'subnet_id', 
+        'virtual_zone_id', 'virtual_zone_name', 'active_queries_names', 
+        'active_tasks_names', 'purdue_level', 'first_seen', 'vlan', 'fdl', 
+        'address', 'gateway', 'asset_type', 'class_type', 'hostname', 
+        'plc_slots', 'project_parsed', 'serial_number', 'criticality', 
+        'domain_workgroup', 'default_gateway', 'edge_last_run', 'edge_id', 
+        'installed_antivirus', 'has_interfaces', 'old_ips', 'state', 
+        'custom_informations', 'patch_count', 'code_sections', 
+        'installed_programs_count', 'usb_devices_count', 'os_build', 
+        'os_architecture', 'os_service_pack', 'asset_insight', 'display_name', 
+        'protocol', 'last_seen', 'num_alerts', 'children', 'network', 'subnet', 
+        'subnet_tag', 'subnet_type', 'custom_attributes', 'insight_names', 'risk_score'
+    ]
+
+    print("Mandatory fields (Always included): id, name")
+    print("Optional fields to include:")
+    
+    # Display the fields in a clean column format
+    for i, field in enumerate(optional_fields, start=1):
+        print(f"  {i:>2}. {field}")
+
+    selections = input("\nEnter a comma-separated list of numbers to include (or press Enter to just pull mandatory fields): ").strip()
+    
+    selected_fields = list(mandatory_fields)
+
+    if selections:
+        try:
+            indices = [int(x.strip()) for x in selections.split(',') if x.strip().isdigit()]
+            for index in indices:
+                if 1 <= index <= len(optional_fields):
+                    field_name = optional_fields[index - 1]
+                    if field_name not in selected_fields:
+                        selected_fields.append(field_name)
+        except Exception as e:
+            print("Error parsing field selection. Defaulting to mandatory fields only.")
+
+    return selected_fields
+
 def fetch_all_assets(ctd_ip, headers, fieldnames):
     """Paginates through the asset endpoint and formats the requested fields."""
-    print("Fetching Assets...")
+    print("\nFetching Assets...")
     parsed_assets = []
     page = 1
 
@@ -67,6 +115,7 @@ def fetch_all_assets(ctd_ip, headers, fieldnames):
             'ghost__exact': 'false',
             'valid__exact': 'true',        
             'special_hint__exact': '0', # 0 = eUnicast
+            'site_id__exact' : '1',
             'fields': fields_param # Server-side filtering
         }
 
@@ -142,82 +191,7 @@ def main():
     """Main function."""
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     
-    # -------------------------------------------------------------------------
-    # AVAILABLE API FIELDS
-    # -------------------------------------------------------------------------
-    # To extract additional data, copy the desired fields from the reference 
-    # list below and add them to the 'asset_fieldnames' list below it.
-    asset_fieldnames = [
-    'id',
-    'name', 
-    'ipv4', 
-    'ipv6', 
-    'mac', 
-    'os', 
-    'model', 
-    'vendor',
-    'firmware', 
-    # 'site_id', 
-    # 'resource_id',
-    # 'timestamp',
-    # 'last_updated',
-    # 'approved',
-    # 'valid', 
-    # 'ghost', 
-    # 'parsed', 
-    # 'special_hint', 
-    # 'risk_level', 
-    # 'last_entity_seen', 
-    # 'site_name', 
-    # 'network_id', 
-    # 'subnet_id', 
-    # 'virtual_zone_id', 
-    # 'virtual_zone_name', 
-    # 'active_queries_names', 
-    # 'active_tasks_names', 
-    # 'purdue_level', 
-    # 'first_seen', 
-    # 'vlan', 
-    # 'fdl', 
-    # 'address', 
-    # 'gateway', 
-    # 'asset_type', 
-    # 'class_type', 
-    # 'hostname', 
-    # 'plc_slots', 
-    # 'project_parsed', 
-    # 'serial_number', 
-    # 'criticality', 
-    # 'domain_workgroup', 
-    # 'default_gateway', 
-    # 'edge_last_run', 
-    # 'edge_id', 
-    # 'installed_antivirus', 
-    # 'has_interfaces', 
-    # 'old_ips', 
-    # 'state', 
-    # 'custom_informations', 
-    # 'patch_count', 
-    # 'code_sections', 
-    # 'installed_programs_count', 
-    # 'usb_devices_count', 
-    # 'os_build', 
-    # 'os_architecture', 
-    # 'os_service_pack', 
-    # 'asset_insight', 
-    # 'display_name', 
-    # 'protocol', 
-    # 'last_seen', 
-    # 'num_alerts', 
-    # 'children', 
-    # 'network', 
-    # 'subnet', 
-    # 'subnet_tag', 
-    # 'subnet_type', 
-    # 'custom_attributes', 
-    # 'insight_names', 
-    # 'risk_score'
-    ]
+    print("=== Claroty CTD Asset Extractor ===")
     
     # Setup & Authentication
     ctd_ip = input("Enter CTD IP or hostname: ").strip()
@@ -225,7 +199,9 @@ def main():
     password = getpass.getpass("Enter CTD password: ").strip()
     headers = authenticate(ctd_ip, username, password)
 
+    # Output preferences & Field selection
     output_format = get_output_preference()
+    asset_fieldnames = get_fields_input()
 
     # Fetch Data
     parsed_assets = fetch_all_assets(ctd_ip, headers, asset_fieldnames)

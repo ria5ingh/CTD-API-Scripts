@@ -1,3 +1,14 @@
+# =============================================================================
+# Script Metadata
+# -----------------------------------------------------------------------------
+#
+# Description:
+# This script connects to a Claroty CTD server, authenticates, and retrieves 
+# a list of vulnerable assets, along with confirmed CVEs found by CTD per asset. Output is modularized
+# and can be exported to either CSV or a nested JSON format based on user input.
+# It also includes an optional time filter to only pull recently seen assets.
+# =============================================================================
+
 import requests
 import urllib3
 import sys
@@ -8,10 +19,7 @@ import getpass
 
 urllib3.disable_warnings()
 
-# ==========================================
 # Authentication & User Input
-# ==========================================
-
 def authenticate(ctd_ip, username, password):
     """Authenticates with the CTD server and returns the API headers."""
     print(f"\nAuthenticating to CTD at https://{ctd_ip}...")
@@ -41,6 +49,18 @@ def get_output_preference():
         if choice in ['csv', 'json']:
             return choice
         print("Invalid input. Please type 'csv' or 'json'.")
+
+def get_relative_time_filter():
+    """Prompts the user for a relative timeframe to filter assets by last seen date."""
+    print("\n--- Time Filter ---")
+    days_input = input("Pull assets last seen within how many days ago? (Leave blank for all time): ").strip()
+    
+    if days_input.isdigit():
+        print(f"Filtering for assets last seen within the last {days_input} days.\n")
+        return days_input
+    else:
+        print("No time filter applied. Pulling all relevant assets.\n")
+        return None
 
 def get_fields_input():
     """Prompts the user for additional fields to pull from the API."""
@@ -102,11 +122,7 @@ def prompt_asset_id_filter(asset_info):
     print(f"Asset ID '{target_asset}' not found in the relevant assets list. Proceeding with all assets.\n")
     return None
 
-# ==========================================
-# Core API Logic
-# ==========================================
-
-def fetch_assets(ctd_ip, headers):
+def fetch_assets(ctd_ip, headers, relative_days):
     """Fetches valid unicast assets using server-side field filtering."""
     print("Fetching relevant assets...")
     asset_cve_counts = {}
@@ -126,6 +142,10 @@ def fetch_assets(ctd_ip, headers):
             'relevance__exact': '1', # ONLY pull assets that have confirmed CVEs
             'fields': 'id,;$name'
         }
+        
+        # Append the relative time filter if the user provided a number
+        if relative_days:
+            params['last_seen__relative_time'] = relative_days
         
         try:
             response = requests.get(f"https://{ctd_ip}/ranger/assets", verify=False, headers=headers, data=auth_data_body, params=params)
@@ -199,12 +219,10 @@ def fetch_cves(ctd_ip, headers, asset_cve_counts, asset_cve_mapping, fields_para
             else:
                 break
 
-# ==========================================
-# Output Generation
-# ==========================================
 
+# Output Generation
 def format_value(value):
-    """Helper to cleanly format nested dicts and lists into strings for CSVs."""
+    """Helper to format nested dicts and lists into strings for CSVs."""
     if isinstance(value, dict):
         return value.get('value', str(value))
     elif isinstance(value, list):
@@ -279,10 +297,8 @@ def export_to_json(timestamp, asset_cve_mapping, asset_info):
     except Exception as e:
         print(f"Error writing {json_filename}: {e}")
 
-# ==========================================
-# Main Orchestration
-# ==========================================
 
+# Main 
 def main():
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     
@@ -296,9 +312,10 @@ def main():
 
     fields_param, additional_fields = get_fields_input()
     output_format = get_output_preference()
+    relative_days = get_relative_time_filter()
     
     # 2. Fetch Assets
-    asset_cve_counts, asset_cve_mapping, asset_info = fetch_assets(ctd_ip, headers)
+    asset_cve_counts, asset_cve_mapping, asset_info = fetch_assets(ctd_ip, headers, relative_days)
     
     if not asset_info:
         print("No assets matched the criteria. Exiting script.")
