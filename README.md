@@ -9,15 +9,13 @@ This is a collection of Python scripts to automate commonly requested or custom 
 - request API key for NVD, create a .env file and enter the key as NVD_KEY = "your key"
 
 ### Current Scripts
-1. **`Assets_Per_CVEV2.py`**: generates JSON output *OR* two CSV files given the hostname/IP of the CTD instance and credentials. 
-    - **`cve_ids_list.csv`**: Lists confirmed CVEs along with # of assets corresponding to each CVE.
-    - **`assets_per_cve_list.csv`**: Lists all individual assets per confirmed CVE.
-    - **`assets_per_cve_list.json`**: lists all assets per confirmed CVE as json file. 
+### Current Scripts
 
-2. **`CVEs_Per_AssetV2.py`**: generates JSON output *OR* two CSV files given the hostname/IP of the CTD instance and credentials. 
-    - **`assets_cve_counts_list.csv`**: Lists all assets along with # of confirmed CVEs per asset.
-    - **`cves_per_asset_list.csv`**: Lists all confirmed CVEs per asset.
-    - **`cves_per_assets_list.json`**: lists all CVEs per asset as json file. 
+1. **`Assets_Per_CVE`**: Given CTD credentials, this script exports a comprehensive mapping of confirmed CVEs and the specific assets they affect. It features an interactive menu to filter by date or specific CVEs, and allows dynamic selection of asset fields to export as CSV or JSON.
+
+2. **`CVEs_Per_Asset`**: Given CTD credentials, this script exports a list of assets and all their associated confirmed vulnerabilities. It includes interactive options to filter by Asset ID or last-seen dates, and allows dynamic selection of vulnerability data points to export as CSV or JSON.
+
+3. **`Full_Asset_List`**: Given CTD credentials, this script retrieves a complete inventory of all active unicast assets in the environment. It allows users to interactively choose from dozens of available asset fields (e.g., IPs, MACs, OS, risk scores) to build a custom CSV or JSON report.
 
 
 3. **`Get_Edge_Host.py`**: example/helper script that identifies the Windows Edge Host from a CTD instance, given the hostname/IP and credentials. Prints output to terminal. (Future development includes identifying Linux and other Win hosts).
@@ -64,5 +62,4 @@ This is a collection of Python scripts to automate commonly requested or custom 
 Clone the repository, install requirements, (including an NVD API key for `CPE_Names.py` and `CVE_Matches.py`, stored as an environment variable in your system), and run the scripts (VSCode or other IDE recommended). Running the scripts will prompt you for the hostname or IP, username, and password of your CTD instance. Once inputed, the scripts will query the CTD REST API and create the corresponding CSVs in your local directory. 
 
 ### Future Development
-- ~~CVEs for 3rd-party Windows Programs script (integrate with NVD)~~
 - CVEs for Linux OS script
