@@ -7,6 +7,7 @@ This script connects to a Claroty CTD instance, authenticates, and retrieves a c
 *   **Comprehensive Inventory:** Retrieves all valid, active unicast assets from the CTD environment.
 *   **Dynamic Field Selection:** Interactively choose from dozens of available asset data points (e.g., `ipv4`, `mac`, `vendor`, `os`, `firmware`, `risk_score`) to include in your report without needing to edit the code. 
 *   **Flexible Output:** Export your custom asset inventory to either a CSV file or a formatted JSON file.
+*   **`Full_Asset_List_PS.ps1`**: same script, runnable through powershell. 
 
 ## Prerequisites
 
