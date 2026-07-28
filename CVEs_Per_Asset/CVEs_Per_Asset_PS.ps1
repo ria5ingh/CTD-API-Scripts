@@ -127,7 +127,7 @@ function Get-FieldsInput {
     }
 }
 
-function Prompt-AssetIdFilter {
+function Get-AssetIdFilter {
     param ([hashtable]$AssetInfo)
 
     Write-Host "`n--- Relevant Assets (Confirmed Vulnerabilities) ---"
@@ -157,7 +157,7 @@ function Prompt-AssetIdFilter {
     return $null
 }
 
-function Fetch-Assets {
+function Get-Assets {
     param (
         [string]$CtdIp,
         [hashtable]$Headers,
@@ -217,7 +217,7 @@ function Fetch-Assets {
     }
 }
 
-function Fetch-CVEs {
+function Get-CVEs {
     param (
         [string]$CtdIp,
         [hashtable]$Headers,
@@ -389,12 +389,36 @@ function Export-ToJson {
         }
     }
             
-    try {
-        $OutputData | ConvertTo-Json -Depth 10 | Set-Content -Path $JsonFilename -Encoding UTF8
-        Write-Host "`nJSON Exported:`n - $JsonFilename" -ForegroundColor Green
+        try {
+        # 1. Generate the raw (ugly) JSON string
+        $RawJson = $OutputData | ConvertTo-Json -Depth 10
+
+        # 2. Fix the PowerShell 5.1 double-space colon bug
+        $RawJson = $RawJson -replace '":\s+', '": '
+
+        # 3. Recalculate perfect 4-space indents, stripping PS5.1's weird alignments
+        $Indent = 0
+        $CleanJson = @()
+        foreach ($Line in ($RawJson -split "`r`n|`n")) {
+            $Trimmed = $Line.Trim()
+            
+            # Decrease indent if line starts with a closing bracket/brace
+            if ($Trimmed -match '^[\]\}]') { $Indent -= 4 }
+            
+            # Apply standard spaces
+            $CleanJson += (" " * [Math]::Max(0, $Indent)) + $Trimmed
+            
+            # Increase indent if line ends with an opening bracket/brace
+            if ($Trimmed -match '[\{\[]$') { $Indent += 4 }
+        }
+        $FinalJson = $CleanJson -join "`r`n"
+
+        # 4. Save the perfectly formatted JSON
+        $FinalJson | Set-Content -Path $JsonFilename -Encoding UTF8
+        Write-Host "`nSuccessfully exported JSON report:`n - $JsonFilename" -ForegroundColor Green
     }
     catch {
-        Write-Host "Error writing $JsonFilename : $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "Error writing to $JsonFilename`: $($_.Exception.Message)" -ForegroundColor Red
     }
 }
 
@@ -421,7 +445,7 @@ $OutputFormat = Get-OutputPreference
 $RelativeDays = Get-RelativeTimeFilter
 
 # 2. Fetch Assets
-$AssetData = Fetch-Assets -CtdIp $CtdIp -Headers $Headers -RelativeDays $RelativeDays
+$AssetData = Get-Assets -CtdIp $CtdIp -Headers $Headers -RelativeDays $RelativeDays
 $AssetCveCounts = $AssetData.Counts
 $AssetCveMapping = $AssetData.Mapping
 $AssetInfo = $AssetData.Info
@@ -432,7 +456,7 @@ if ($AssetInfo.Count -eq 0) {
 }
     
 # 3. Prompt for Single Asset Filter
-$SelectedAssetId = Prompt-AssetIdFilter -AssetInfo $AssetInfo
+$SelectedAssetId = Get-AssetIdFilter -AssetInfo $AssetInfo
 
 if ($null -ne $SelectedAssetId) {
     # Filter the hashtables to just the selected ID
@@ -446,7 +470,7 @@ if ($null -ne $SelectedAssetId) {
 }
 
 # 4. Fetch CVEs for Selected Asset(s)
-Fetch-CVEs -CtdIp $CtdIp -Headers $Headers -AssetCveCounts $AssetCveCounts -AssetCveMapping $AssetCveMapping -FieldsParam $FieldsParam -AdditionalFields $AdditionalFields
+Get-CVEs -CtdIp $CtdIp -Headers $Headers -AssetCveCounts $AssetCveCounts -AssetCveMapping $AssetCveMapping -FieldsParam $FieldsParam -AdditionalFields $AdditionalFields
 
 # 5. Validation & Export
 $AssetsWithVulns = 0

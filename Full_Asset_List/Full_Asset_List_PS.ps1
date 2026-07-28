@@ -119,7 +119,7 @@ function Get-FieldsInput {
     return $SelectedFields
 }
 
-function Fetch-AllAssets {
+function Get-AllAssets {
     param (
         [string]$CtdIp,
         [hashtable]$Headers,
@@ -240,7 +240,7 @@ $OutputFormat = Get-OutputPreference
 $AssetFieldnames = Get-FieldsInput
 
 # Fetch Data
-$ParsedAssets = Fetch-AllAssets -CtdIp $CtdIp -Headers $Headers -Fieldnames $AssetFieldnames
+$ParsedAssets = Get-AllAssets -CtdIp $CtdIp -Headers $Headers -Fieldnames $AssetFieldnames
 $TotalAssets = $ParsedAssets.Count
 
 # Route Output

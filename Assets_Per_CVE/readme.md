@@ -8,6 +8,8 @@ This script connects to a Claroty CTD instance, authenticates, and retrieves a c
 *   **Time Windows:** Optionally filter the results by a specific detection timeframe (Start/End Dates).
 *   **Custom Field Selection:** Dynamically append additional asset details to your report (e.g., `ipv4`, `mac`, `vendor`, `os`, `firmware`).
 *   **Flexible Output:** Export your findings into either two related CSV files or a single nested JSON file.
+*   **`Assets_Per_CVE_PS.ps1`**: same script, runnable through powershell. 
+
 
 ## Prerequisites
 

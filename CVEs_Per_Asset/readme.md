@@ -8,6 +8,8 @@ This script connects to a Claroty CTD instance, authenticates, and retrieves a l
 *   **Relative Time Filter:** Optionally restrict the query to only pull assets last seen within a specified number of days.
 *   **Custom Field Selection:** Dynamically include additional vulnerability details in your report (e.g., `cvss_v3_score`, `epss_score`, `actively_exploited`, `advisory_names`).
 *   **Flexible Output:** Export the data into two relational CSV files or one comprehensive JSON file.
+*   **`CVEs_Per_Asset_PS.ps1`**: same script, runnable through powershell. 
+
 
 ## Prerequisites
 

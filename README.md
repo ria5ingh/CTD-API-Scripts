@@ -13,11 +13,11 @@ Request an API key for NVD, create a `.env` file and enter the key as `NVD_KEY =
 
 ### Current Scripts
 
-1. **`Assets_Per_CVE`**: Given CTD credentials, this script exports a comprehensive mapping of confirmed CVEs and the specific assets they affect. It features an interactive menu to filter by date or specific CVEs, and allows dynamic selection of asset fields to export as CSV or JSON.
+1. **`Assets_Per_CVE`**: Given CTD credentials, this script exports a comprehensive mapping of confirmed CVEs and the specific assets they affect. It features an interactive menu to filter by date or specific CVEs, and allows dynamic selection of asset fields to export as CSV or JSON. ***(Available in powershell)***
 
-2. **`CVEs_Per_Asset`**: Given CTD credentials, this script exports a list of assets and all their associated confirmed vulnerabilities. It includes interactive options to filter by Asset ID or last-seen dates, and allows dynamic selection of vulnerability data points to export as CSV or JSON.
+2. **`CVEs_Per_Asset`**: Given CTD credentials, this script exports a list of assets and all their associated confirmed vulnerabilities. It includes interactive options to filter by Asset ID or last-seen dates, and allows dynamic selection of vulnerability data points to export as CSV or JSON. ***(Available in powershell)***
 
-3. **`Full_Asset_List`**: Given CTD credentials, this script retrieves a complete inventory of all active unicast assets in the environment. It allows users to interactively choose from dozens of available asset fields (e.g., IPs, MACs, OS, risk scores) to build a custom CSV or JSON report.
+3. **`Full_Asset_List`**: Given CTD credentials, this script retrieves a complete inventory of all active unicast assets in the environment. It allows users to interactively choose from dozens of available asset fields (e.g., IPs, MACs, OS, risk scores) to build a custom CSV or JSON report. ***(Available in powershell)***
 
 4. `Get_Edge_Host.py`: A lightweight diagnostic script that identifies all active Edge hosts within a CTD environment and prints their details directly to the terminal. *(See the `Get_Edge_Progs` directory for more details)*.
 
