@@ -6,6 +6,8 @@ This directory contains two related scripts designed to interact with your Claro
 
 *   **`Get_Edge_Host.py`**: A lightweight diagnostic/helper script. It queries the CTD REST API for all active assets, filters for those with an assigned `edge_id` (typically Windows/Linux hosts running the Edge sensor), and prints a cleanly formatted table of the results directly to your terminal. It does not generate any external files.
 *   **`Get_Edge_Progsv3.py`**: The primary extraction script. It leverages the host-finding logic from the helper script, presents you with a list of detected Edge hosts, and allows you to pull the installed 3rd-party programs for a single specific host or *all* detected hosts at once. It cross-references these programs with Claroty's native tracking capabilities and exports the results to CSV or JSON.
+*   **`Get_Edge_Progs_PS.ps1`**: same script, runnable through powershell. 
+
 
 ## Prerequisites & Requirements
 
