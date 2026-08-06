@@ -94,15 +94,46 @@ function Get-FieldsInput {
         Write-Host ("  {0,2}. {1}" -f $Index, $OptionalFields[$i])
     }
 
-    $Selections = (Read-Host "`nEnter a comma-separated list of numbers to include (or press Enter to just pull mandatory fields)").Trim()
+    $Selections = (Read-Host "`nEnter numbers or ranges (e.g., 1, 4-8, 12) to include (or press Enter to just pull mandatory fields)").Trim()
         
     $SelectedFields = [System.Collections.Generic.List[string]]::new()
     $SelectedFields.AddRange([string[]]$MandatoryFields)
 
     if (![string]::IsNullOrEmpty($Selections)) {
         try {
-            $Indices = $Selections -split ',' | Where-Object { $_ -match '^\s*\d+\s*$' } | ForEach-Object { [int]$_.Trim() }
-            foreach ($Index in $Indices) {
+            # Use a HashSet to ensure all indices are unique (preventing duplicates from overlapping ranges)
+            $Indices = [System.Collections.Generic.HashSet[int]]::new()
+            
+            # Split by commas first
+            $Parts = $Selections -split ','
+            
+            foreach ($Part in $Parts) {
+                $Part = $Part.Trim()
+                if ([string]::IsNullOrEmpty($Part)) { continue }
+
+                # Check if the part is a range
+                if ($Part -match '-') {
+                    $RangeParts = $Part -split '-', 2
+                    $Start = [int]$RangeParts[0].Trim()
+                    $End = [int]$RangeParts[1].Trim()
+
+                    # Handle forward and backward inputs gracefully using the range operator (..)
+                    if ($Start -le $End) {
+                        $Start..$End | ForEach-Object { [void]$Indices.Add($_) }
+                    } else {
+                        $End..$Start | ForEach-Object { [void]$Indices.Add($_) }
+                    }
+                }
+                # Check if it's a single digit
+                elseif ($Part -match '^\d+$') {
+                    [void]$Indices.Add([int]$Part)
+                }
+            }
+
+            # Sort the collected indices so they appear in the original list order
+            $SortedIndices = $Indices | Sort-Object
+
+            foreach ($Index in $SortedIndices) {
                 if ($Index -ge 1 -and $Index -le $OptionalFields.Count) {
                     $FieldName = $OptionalFields[$Index - 1]
                     if ($SelectedFields -notcontains $FieldName) {

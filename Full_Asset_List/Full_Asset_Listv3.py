@@ -81,18 +81,37 @@ def get_fields_input():
     for i, field in enumerate(optional_fields, start=1):
         print(f"  {i:>2}. {field}")
 
-    selections = input("\nEnter a comma-separated list of numbers to include (or press Enter to just pull mandatory fields): ").strip()
-    
+    selections = input("\nEnter numbers or ranges (e.g., 1, 4-8, 12) to include (or press Enter to just pull mandatory fields): ").strip()    
     selected_fields = list(mandatory_fields)
 
     if selections:
         try:
-            indices = [int(x.strip()) for x in selections.split(',') if x.strip().isdigit()]
-            for index in indices:
+            indices = set()  # Use a set to prevent duplicate indices if ranges overlap
+            
+            for part in selections.split(','):
+                part = part.strip()
+                if not part:
+                    continue
+                
+                if '-' in part:
+                    start_str, end_str = part.split('-', 1)
+                    start = int(start_str.strip())
+                    end = int(end_str.strip())
+                    
+                    if start <= end:
+                        indices.update(range(start, end + 1))
+                    else:
+                        indices.update(range(end, start + 1))
+                else:
+                    if part.isdigit():
+                        indices.add(int(part))
+            
+            for index in sorted(indices):
                 if 1 <= index <= len(optional_fields):
                     field_name = optional_fields[index - 1]
                     if field_name not in selected_fields:
                         selected_fields.append(field_name)
+                        
         except Exception as e:
             print("Error parsing field selection. Defaulting to mandatory fields only.")
 
